@@ -4,16 +4,18 @@ from sklearn.utils import check_random_state
 
 class KKMeans():
     def __init__(self, n_clusters = 8, init = "random", n_init = 1, 
-                 max_iter = 300, tol = None, verbose = 0, random_state = None, algorithm = "lloyd", kernel = "linear"):      
+                 max_iter = 300, tol = None, verbose = 0,
+                 random_state = None, algorithm = "lloyd", kernel = "linear", **kwds):      
         self.n_clusters = n_clusters 
         self.init = init
         self.n_init = n_init
         self.max_iter = max_iter
         self.tol = tol
-        self.algorithm = algorithm
-        self.random_state = check_random_state(random_state)
-        self.kernel = kernel
         self.verbose = verbose
+        self.random_state = check_random_state(random_state)
+        self.algorithm = algorithm
+        self.kernel = kernel
+        self.kwds = kwds
         self.labels = None
         return
     
@@ -29,7 +31,7 @@ class KKMeans():
         
     def _lloyd(self, data):
         self._init(data)
-        kernel_matrix = pairwise_kernels(data)
+        kernel_matrix = pairwise_kernels(X = data, metric = self.kernel, **self.kwds)
         distances = np.zeros((len(data), self.n_clusters))
         
         for _ in range(self.max_iter):
@@ -41,7 +43,6 @@ class KKMeans():
                 if n_cluster_elements == 0:
                     if self.verbose:
                         print("Empty Cluster encountered. Assigned random element to cluster.")
-                    #pass
                     self.labels[self.random_state.randint(len(self.labels))] = cluster
                     n_cluster_elements = 1      
                 # (SUM K(a,b) for a,b in Cluster) / |cluster|**2 
@@ -68,8 +69,10 @@ class KKMeans():
             self._assign_to_centroids(self.init, data)
             return
         
-        elif self.init =="random":
+        elif self.init == "random":
             centroids = data[self.random_state.randint(0, len(data), self.n_clusters)]
+            print(self.n_clusters)
+            print(centroids)
             self._assign_to_centroids(centroids, data)
             return
         
@@ -77,14 +80,15 @@ class KKMeans():
             self.labels = self.random_state.randint(0, self.n_clusters, len(data))
             return
         
+        raise Exception("Unknown initialisation method")
             
     def _check_centroids(self):
         if len(self.init) != self.n_clusters:
-            raise Exception("The amount of centroids and n_clusters have to be equal ") # TODO
+            raise Exception("Is you dumb?") # TODO
         return
 
     def _assign_to_centroids(self, centroids, data):
-        data_centr_kernel = pairwise_kernels(X = data, Y = centroids, metric = self.kernel)
+        data_centr_kernel = pairwise_kernels(X = data, Y = centroids, metric = self.kernel, **self.kwds)
         centr_distances = np.zeros((len(data), self.n_clusters))
         for cluster in range(self.n_clusters):
             centr_distances[:, cluster] = -2 * data_centr_kernel[:, cluster] + pairwise_kernels([centroids[cluster]]) 
