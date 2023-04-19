@@ -1,0 +1,1 @@
+This is the github repository for my bachelor thesis.
