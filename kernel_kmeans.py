@@ -30,19 +30,19 @@ class KKMeans():
     
         
     def _lloyd(self, data):
-        self._init(data)
+
         kernel_matrix = pairwise_kernels(X = data, metric = self.kernel, **self.kwds)
+        self._init(data, kernel_matrix)
         distances = np.zeros((len(data), self.n_clusters))
         
         for _ in range(self.max_iter):
-            distances.fill(0)
-            
+            distances.fill(0)     
             for cluster in range(self.n_clusters):
                 mask = (self.labels == cluster)
-                n_cluster_elements = sum(mask) #python sum faster on lists than np.sum? (SO says so. needs checking)
+                n_cluster_elements = sum(mask)   # python sum faster on lists than np.sum? (SO says so. needs checking)
                 if n_cluster_elements == 0:
                     if self.verbose:
-                        print("Empty Cluster encountered. Assigned random element to cluster.")
+                        print("Empty Cluster encountered in iteration", _,  "Assigned random element to cluster.")
                     self.labels[self.random_state.randint(len(self.labels))] = cluster
                     n_cluster_elements = 1      
                 # (SUM K(a,b) for a,b in Cluster) / |cluster|**2 
@@ -62,7 +62,7 @@ class KKMeans():
             self.labels = new_labels
         return
 
-    def _init(self, data):
+    def _init(self, data, kernel_matrix):
 
         if isinstance(self.init, (list, tuple, np.ndarray)):
             self._check_centroids() # TODO ? zumindest len(self.init) == self.n_clusters
@@ -71,8 +71,6 @@ class KKMeans():
         
         elif self.init == "random":
             centroids = data[self.random_state.randint(0, len(data), self.n_clusters)]
-            print(self.n_clusters)
-            print(centroids)
             self._assign_to_centroids(centroids, data)
             return
         
@@ -80,23 +78,42 @@ class KKMeans():
             self.labels = self.random_state.randint(0, self.n_clusters, len(data))
             return
         
+        elif self.init == "kmeans++":
+            self._kmeanspp(data, kernel_matrix)
+            return 
+        
         raise Exception("Unknown initialisation method")
             
     def _check_centroids(self):
         if len(self.init) != self.n_clusters:
-            raise Exception("Is you dumb?") # TODO
+            raise Exception("The number of given centroids should match n_clusters") # TODO
         return
 
     def _assign_to_centroids(self, centroids, data):
         data_centr_kernel = pairwise_kernels(X = data, Y = centroids, metric = self.kernel, **self.kwds)
         centr_distances = np.zeros((len(data), self.n_clusters))
         for cluster in range(self.n_clusters):
-            centr_distances[:, cluster] = -2 * data_centr_kernel[:, cluster] + pairwise_kernels([centroids[cluster]]) 
+            centr_distances[:, cluster] = -2 * data_centr_kernel[:, cluster] + pairwise_kernels([centroids[cluster]], metric = self.kernel, **self.kwds) 
         self.labels = np.argmin(centr_distances, axis = 1)
         return
 
-    def fit(self, data):
-        self._check_data(data)
-        if self.algorithm == "lloyd":
-            self._lloyd(data)
+    
+    def _kmeanspp(self, data, kernel_matrix):
+        
+        centroids = np.zeros((self.n_clusters, len(data[0])))
+        centr_distances = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T   
+        for cluster in range(self.n_clusters):
+            if cluster == 0:
+                #random first center
+                index = self.random_state.randint(len(data))
+            else:
+                max_dist_each = np.amax(centr_distances, axis = 1)
+                index = self.random_state.choice(len(data), size = 1, p = max_dist_each/max_dist_each.sum())
+            #TODO testen!!
+            centroids[cluster] = data[index]
+            cluster_term = pairwise_kernels([centroids[cluster]], metric = self.kernel, **self.kwds)
+            data_term = pairwise_kernels(data, [centroids[cluster]], metric = self.kernel, **self.kwds)
+            centr_distances[:, cluster] += (-2 * data_term + cluster_term).reshape(len(data),)
+            
+        self.labels = np.argmin(centr_distances, axis = 1)
         return
