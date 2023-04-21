@@ -2,11 +2,13 @@ import numpy as np
 from sklearn.metrics.pairwise import pairwise_kernels
 from sklearn.utils import check_random_state
 
+
 class KKMeans():
-    def __init__(self, n_clusters = 8, init = "random", n_init = 1, 
+    def __init__(self, n_clusters = 8, init = "random", n_init = 1,
                  max_iter = 300, tol = None, verbose = 0,
-                 random_state = None, algorithm = "lloyd", kernel = "linear", **kwds):      
-        self.n_clusters = n_clusters 
+                 random_state = None, algorithm = "lloyd", kernel = "linear",
+                 **kwds):
+        self.n_clusters = n_clusters
         self.init = init
         self.n_init = n_init
         self.max_iter = max_iter
@@ -18,37 +20,37 @@ class KKMeans():
         self.kwds = kwds
         self.labels = None
         return
-    
+
     def fit(self, data):
         self._check_data(data)
-        
+
         if self.algorithm == "lloyd":
             self._lloyd(data)
-        
+
     def _check_data(self, data):
         return
-    
-        
-    def _lloyd(self, data):
 
-        kernel_matrix = pairwise_kernels(X = data, metric = self.kernel, **self.kwds)
+    def _lloyd(self, data):
+        kernel_matrix = pairwise_kernels(X = data, metric = self.kernel,
+                                         **self.kwds)
         self._init(data, kernel_matrix)
         distances = np.zeros((len(data), self.n_clusters))
-        
+
         for _ in range(self.max_iter):
-            distances.fill(0)     
+            distances.fill(0)
             for cluster in range(self.n_clusters):
                 mask = (self.labels == cluster)
-                n_cluster_elements = sum(mask)   # python sum faster on lists than np.sum? (SO says so. needs checking)
+                n_cluster_elements = sum(mask)   
                 if n_cluster_elements == 0:
                     if self.verbose:
-                        print("Empty Cluster encountered in iteration", _,  "Assigned random element to cluster.")
+                        print("Empty Cluster encountered in iteration",
+                              _, "Assigned random element to cluster.")
                     self.labels[self.random_state.randint(len(self.labels))] = cluster
                     n_cluster_elements = 1      
                 # (SUM K(a,b) for a,b in Cluster) / |cluster|**2 
-                inner_term = kernel_matrix[mask][:,mask].sum() / (n_cluster_elements ** 2)
+                inner_term = kernel_matrix[mask][:, mask].sum() / (n_cluster_elements ** 2)
                 # array that contains for each datapoint x: 2 * (SUM K(x,b) for b in Cluster) / |Cluster|
-                element_term = 2 * kernel_matrix[:,mask].sum(axis = 1) / n_cluster_elements
+                element_term = 2 * kernel_matrix[:, mask].sum(axis = 1) / n_cluster_elements
                 distances[:, cluster] += inner_term
                 distances[:, cluster] -= element_term
             new_labels = np.argmin(distances, axis = 1)
@@ -93,7 +95,8 @@ class KKMeans():
         data_centr_kernel = pairwise_kernels(X = data, Y = centroids, metric = self.kernel, **self.kwds)
         centr_distances = np.zeros((len(data), self.n_clusters))
         for cluster in range(self.n_clusters):
-            centr_distances[:, cluster] = -2 * data_centr_kernel[:, cluster] + pairwise_kernels([centroids[cluster]], metric = self.kernel, **self.kwds) 
+            centr_distances[:, cluster] = (-2 * data_centr_kernel[:, cluster]
+                                            + pairwise_kernels([centroids[cluster]], metric = self.kernel, **self.kwds)) 
         self.labels = np.argmin(centr_distances, axis = 1)
         return
 
@@ -117,3 +120,5 @@ class KKMeans():
             
         self.labels = np.argmin(centr_distances, axis = 1)
         return
+    
+
