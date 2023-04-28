@@ -20,10 +20,12 @@ class KKMeans():
         self.labels = None
         return
     
-    def p_kernel_wrapper(self, x, y=None):
+    def _p_kernel_wrapper(self, x, y=None):
+        ''' Wrapper function for readability '''
         return pairwise_kernels(x, y, metric=self.kernel, n_jobs=-1, **self.kwds)
     
     def fit(self, data):
+        ''' Provides interface for user to fit data.'''
         self._check_data(data)
         
         if self.algorithm == "lloyd":
@@ -33,7 +35,20 @@ class KKMeans():
         return
     
     def _lloyd(self, data):
-        kernel_matrix = self.p_kernel_wrapper(data)
+        '''
+        The original kkmeans algorithm.
+        _init is used to assign labels.
+        inertia is sum of squared distances to nearest centroid (==variance).
+        each row of distances is datapoint, each column centroid,
+            e.g. distances[0,0] is distance from data[0] to center of first cluster.
+        From mathematical pov distances could be initialized with 0-matrix each iter,
+            but too little time is saved to justify the risk of confusion,
+            as the resulting inertia wouldn't be variance anymore (but still as valid)
+        _lloyd_iter updates distances from each point to each centroid, by using 
+            formulas from kkmeans paper.
+        
+        '''
+        kernel_matrix = self._p_kernel_wrapper(data)
         self._init(data, kernel_matrix)
         inertia = 0
         for _ in range(self.max_iter):
@@ -53,6 +68,8 @@ class KKMeans():
             inertia = inertia_new
     
     def _lloyd_iter(self, kernel_matrix, distances):
+        '''Update distances as described in 
+        https://www.cs.utexas.edu/users/inderjit/public_papers/kdd_spectral_kernelkmeans.pdf'''
         for cluster in range(self.n_clusters):
             mask = (self.labels == cluster)
             n_cluster_elements = sum(mask) 
@@ -70,6 +87,7 @@ class KKMeans():
             distances[:, cluster] -= element_term
     
     def _init(self, data, kernel_matrix):
+        '''Assign labels to each datapoint by given method'''
         if isinstance(self.init, (list, tuple, np.ndarray)):
             self._check_centroids() # TODO 
             self._assign_to_centroids(self.init, data)
@@ -96,17 +114,27 @@ class KKMeans():
         return
 
     def _assign_to_centroids(self, centroids, data):
-        data_centr_kernel = self.p_kernel_wrapper(data, centroids)
+        '''
+        Calculates distances to each given center by using SQUARED distances,
+        as in the feature space one cannot explicitly calculate euclidian distance
+        and instead one has to rely on ||a-b||^2 == K(a,a) - 2K(a,b) + K(b,b)
+        (K(.,.) is the kernel)
+        (Here, K(a,a) is omitted since it is doesn't change for each datapoint)
+        '''
+        data_centr_kernel = self._p_kernel_wrapper(data, centroids)
         centr_distances = np.zeros((len(data), self.n_clusters))
         for cluster in range(self.n_clusters):
             centr_distances[:, cluster] = (-2 * data_centr_kernel[:, cluster]
-                + self.p_kernel_wrapper([centroids[cluster]]))
+                + self._p_kernel_wrapper([centroids[cluster]]))
         self.labels = np.argmin(centr_distances, axis = 1)
         return
 
     
     def _kmeanspp(self, data, kernel_matrix):
-        
+        '''
+        Kmeans++ with the distance described in _assign_to_centroids.
+        Here, K(a,a) must NOT be omitted.
+        '''
         centroids = np.zeros((self.n_clusters, len(data[0])))
         centr_distances = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T   
         for cluster in range(self.n_clusters):
@@ -115,12 +143,12 @@ class KKMeans():
                 index = self.random_state.randint(len(data))
             else:
                 max_dist_each = np.amin(centr_distances[:, :cluster + 1], axis = 1)
-                max_dist_each[max_dist_each < 0] = 0
+                max_dist_each[max_dist_each < 0] = 0 
                 probs = max_dist_each/max_dist_each.sum()
                 index = self.random_state.choice(len(data), size = 1, p = probs)
             centroids[cluster] = data[index]
-            cluster_term = self.p_kernel_wrapper([centroids[cluster]])
-            data_term = self.p_kernel_wrapper(data, [centroids[cluster]])
+            cluster_term = self._p_kernel_wrapper([centroids[cluster]])
+            data_term = self._p_kernel_wrapper(data, [centroids[cluster]])
             centr_distances[:, cluster] += (-2 * data_term + cluster_term).reshape(len(data),)    
         self.labels = np.argmin(centr_distances, axis = 1)
                 
