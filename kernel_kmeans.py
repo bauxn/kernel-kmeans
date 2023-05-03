@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_kernels
 from sklearn.utils import check_random_state
+from _lloyd_iter import calc_sums
 
 
 class KKMeans():
@@ -22,7 +23,8 @@ class KKMeans():
     
     def _p_kernel_wrapper(self, x, y=None):
         ''' Wrapper function for readability '''
-        return pairwise_kernels(x, y, metric=self.kernel, n_jobs=-1, **self.kwds)
+        n_jobs = -1
+        return np.ascontiguousarray(pairwise_kernels(x, y, metric=self.kernel, n_jobs=n_jobs, **self.kwds))
     
     def fit(self, data):
         ''' Provides interface for user to fit data.'''
@@ -68,23 +70,15 @@ class KKMeans():
             inertia = inertia_new
     
     def _lloyd_iter(self, kernel_matrix, distances):
-        '''Update distances as described in 
-        https://www.cs.utexas.edu/users/inderjit/public_papers/kdd_spectral_kernelkmeans.pdf'''
+        element_sums, cluster_sums, magnitudes =\
+            calc_sums(kernel_matrix, self.labels, self.n_clusters)
+        
         for cluster in range(self.n_clusters):
-            mask = (self.labels == cluster)
-            n_cluster_elements = sum(mask) 
-            if n_cluster_elements == 0:
-                if self.verbose:
-                    print("Empty Cluster encountered,",  
-                          "assigned random element to cluster.")
-                self.labels[self.random_state.randint(len(self.labels))] = cluster
-                n_cluster_elements = 1      
-            # (SUM K(a,b) for a,b in Cluster) / |cluster|**2 
-            inner_term = kernel_matrix[mask][:, mask].sum() / (n_cluster_elements ** 2)
-            # array that contains for each datapoint x: 2 * (SUM K(x,b) for b in Cluster) / |Cluster|
-            element_term = 2 * kernel_matrix[:, mask].sum(axis = 1) / n_cluster_elements
-            distances[:, cluster] += inner_term
-            distances[:, cluster] -= element_term
+            magn = magnitudes[cluster]
+            el_sum = element_sums[:, cluster]
+            cl_sum = cluster_sums[cluster]
+            distances[:, cluster] += (cl_sum / magn**2
+                                     -2 * el_sum / magn)
     
     def _init(self, data, kernel_matrix):
         '''Assign labels to each datapoint by given method'''
