@@ -62,10 +62,7 @@ class KKMeans():
                 if self.verbose:
                     print("Converged at iteration:", _ + 1,
                           "Inertia:", inertia_new)
-                break                
-            if self.verbose:
-                print("Iteration:", _ + 1,
-                      "Inertia:", inertia_new)
+                break
             self.labels = labels_new
             inertia = inertia_new
     

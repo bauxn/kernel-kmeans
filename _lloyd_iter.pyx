@@ -1,10 +1,10 @@
 # distutils: extra_compile_args = /openmp
 import numpy as np
 from cython.parallel import prange
+from cython cimport boundscheck, wraparound
 
-
-#do boundcheck = False etc
-
+@boundscheck(False)
+@wraparound(False)
 def calc_sums(const double[:, ::1] kernel_matrix, const long long[::1] labels, const int n_clusters):
     cdef:
         int DATA_LEN = kernel_matrix.shape[0]
@@ -26,4 +26,3 @@ def calc_sums(const double[:, ::1] kernel_matrix, const long long[::1] labels, c
     
 
     return np.asarray(element_cluster_terms), np.sum(inner_cluster_terms, axis=0), np.sum(n_cluster_elements, axis = 0)
-    
