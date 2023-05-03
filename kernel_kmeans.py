@@ -23,7 +23,7 @@ class KKMeans():
     
     def _p_kernel_wrapper(self, x, y=None):
         ''' Wrapper function for readability '''
-        n_jobs = -1
+        n_jobs = 1
         return np.ascontiguousarray(pairwise_kernels(x, y, metric=self.kernel, n_jobs=n_jobs, **self.kwds))
     
     def fit(self, data):
