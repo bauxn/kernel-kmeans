@@ -12,7 +12,7 @@ def calc_sums(const double[:, ::1] kernel_matrix, const long long[::1] labels, c
         double[:, ::1] element_cluster_terms = np.zeros((DATA_LEN, n_clusters), dtype=np.float64)
         int[:, ::1] n_cluster_elements = np.zeros((DATA_LEN, n_clusters), dtype=np.int32)
         int i,j
-        float kernel_ij
+        double kernel_ij
         int label_i, label_j
     for i in prange(DATA_LEN, nogil=True):
         label_i = labels[i]
