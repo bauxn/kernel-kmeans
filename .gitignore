@@ -4,3 +4,4 @@ setup.cfg
 *.pyd
 *.c
 build/
+.ipynb_checkpoints/
