@@ -1,18 +1,19 @@
 import numpy as np
-from sklearn.utils import check_random_state
 from _lloyd_iter import calc_sums
+import pairwise_kernel
+
 
 class KKMeans():
     def __init__(self, n_clusters=8, init="random", n_init=1,
                  max_iter=300, tol=None, verbose=0,
-                 random_state=None, algorithm="lloyd", kernel="linear", **kwargs):
+                 seed=None, algorithm="lloyd", kernel="linear", **kwargs):
         self.n_clusters = n_clusters
         self.init = init
         self.n_init = n_init
         self.max_iter = max_iter
         self.tol = tol
         self.verbose = verbose
-        self.random_state = check_random_state(random_state)
+        self.random = np.random.default_rng(seed)
         self.algorithm = algorithm
         self.kernel = kernel
         self.kwargs = kwargs
@@ -81,12 +82,12 @@ class KKMeans():
             return
         
         elif self.init == "random":
-            centroids = data[self.random_state.randint(0, len(data), self.n_clusters)]
+            centroids = data[self.random.integers(0, len(data), self.n_clusters)]
             self.labels = self._assign_to_centroids(centroids, data)
             return
         
         elif self.init == "truerandom":
-            self.labels = self.random_state.randint(0, self.n_clusters, len(data))
+            self.labels = self.random.integers(0, self.n_clusters, len(data))
             return
         
         elif self.init == "kmeans++":
@@ -114,8 +115,7 @@ class KKMeans():
             centr_distances[:, cluster] = (-2 * data_centr_kernel[:, cluster]
                                         + self._p_kernel_wrapper([centroids[cluster]]))
         return np.argmin(centr_distances, axis = 1)
-
-    
+ 
     def _kmeanspp(self, data, kernel_matrix):
         '''
         Kmeans++ with the distance described in _assign_to_centroids.
@@ -126,12 +126,12 @@ class KKMeans():
         for cluster in range(self.n_clusters):
             if cluster == 0:
                 #random first center
-                index = self.random_state.randint(len(data))
+                index = self.random.integers(low=0, high=len(data))
             else:
                 max_dist_each = np.amin(centr_distances[:, :cluster + 1], axis = 1)
                 max_dist_each[max_dist_each < 0] = 0 
                 probs = max_dist_each/max_dist_each.sum()
-                index = self.random_state.choice(len(data), size=1, p=probs)
+                index = self.random.choice(len(data), size=1, p=probs)
             centroids[cluster] = data[index]
             cluster_term = self._p_kernel_wrapper([centroids[cluster]])
             data_term = self._p_kernel_wrapper(data, [centroids[cluster]])
@@ -140,6 +140,9 @@ class KKMeans():
             
     def predict(self, data):
         return
+            
+            
+
             
             
 
