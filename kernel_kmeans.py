@@ -1,13 +1,11 @@
 import numpy as np
-from sklearn.metrics.pairwise import pairwise_kernels
 from sklearn.utils import check_random_state
 from _lloyd_iter import calc_sums
-
 
 class KKMeans():
     def __init__(self, n_clusters=8, init="random", n_init=1,
                  max_iter=300, tol=None, verbose=0,
-                 random_state=None, algorithm="lloyd", kernel="linear", **kwds):
+                 random_state=None, algorithm="lloyd", kernel="linear", **kwargs):
         self.n_clusters = n_clusters
         self.init = init
         self.n_init = n_init
@@ -17,14 +15,12 @@ class KKMeans():
         self.random_state = check_random_state(random_state)
         self.algorithm = algorithm
         self.kernel = kernel
-        self.kwds = kwds
+        self.kwargs = kwargs
         self.labels = None
-        return
-    
-    def _p_kernel_wrapper(self, x, y=None):
-        ''' Wrapper function for readability '''
-        n_jobs = 1
-        return np.ascontiguousarray(pairwise_kernels(x, y, metric=self.kernel, n_jobs=n_jobs, **self.kwds))
+        self.distances = None
+        
+    def _p_kernel_wrapper(self, X, Y=None):
+        return pairwise_kernel.kernel_matrix(X, Y, kernel=self.kernel, **self.kwargs)
     
     def fit(self, data):
         ''' Provides interface for user to fit data.'''
@@ -54,15 +50,15 @@ class KKMeans():
         self._init(data, kernel_matrix)
         inertia = 0
         for _ in range(self.max_iter):
-            distances = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T
-            self._lloyd_iter(kernel_matrix, distances)
-            labels_new = np.argmin(distances, axis=1)
-            inertia_new = np.amin(distances, axis=1).sum()
+            self.distances = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T
+            self._lloyd_iter(kernel_matrix, self.distances)
+            labels_new = np.argmin(self.distances, axis=1)
+            inertia_new = np.amin(self.distances, axis=1).sum()
             if all(labels_new == self.labels) or abs(inertia - inertia_new) < self.tol:
                 if self.verbose:
                     print("Converged at iteration:", _ + 1,
                           "Inertia:", inertia_new)
-                break
+                return inertia, labels_new
             self.labels = labels_new
             inertia = inertia_new
     
@@ -74,7 +70,7 @@ class KKMeans():
             magn = magnitudes[cluster]
             el_sum = element_sums[:, cluster]
             cl_sum = cluster_sums[cluster]
-            distances[:, cluster] += (cl_sum / magn**2
+            self.distances[:, cluster] += (cl_sum / magn**2
                                      -2 * el_sum / magn)
     
     def _init(self, data, kernel_matrix):
@@ -86,7 +82,7 @@ class KKMeans():
         
         elif self.init == "random":
             centroids = data[self.random_state.randint(0, len(data), self.n_clusters)]
-            self._assign_to_centroids(centroids, data)
+            self.labels = self._assign_to_centroids(centroids, data)
             return
         
         elif self.init == "truerandom":
@@ -94,7 +90,7 @@ class KKMeans():
             return
         
         elif self.init == "kmeans++":
-            self._kmeanspp(data, kernel_matrix)
+            self.labels = self._kmeanspp(data, kernel_matrix)
             return 
         
         raise Exception("Unknown initialisation method")
@@ -116,9 +112,8 @@ class KKMeans():
         centr_distances = np.zeros((len(data), self.n_clusters))
         for cluster in range(self.n_clusters):
             centr_distances[:, cluster] = (-2 * data_centr_kernel[:, cluster]
-                + self._p_kernel_wrapper([centroids[cluster]]))
-        self.labels = np.argmin(centr_distances, axis = 1)
-        return
+                                        + self._p_kernel_wrapper([centroids[cluster]]))
+        return np.argmin(centr_distances, axis = 1)
 
     
     def _kmeanspp(self, data, kernel_matrix):
@@ -136,14 +131,18 @@ class KKMeans():
                 max_dist_each = np.amin(centr_distances[:, :cluster + 1], axis = 1)
                 max_dist_each[max_dist_each < 0] = 0 
                 probs = max_dist_each/max_dist_each.sum()
-                index = self.random_state.choice(len(data), size = 1, p = probs)
+                index = self.random_state.choice(len(data), size=1, p=probs)
             centroids[cluster] = data[index]
             cluster_term = self._p_kernel_wrapper([centroids[cluster]])
             data_term = self._p_kernel_wrapper(data, [centroids[cluster]])
             centr_distances[:, cluster] += (-2 * data_term + cluster_term).reshape(len(data),)    
-        self.labels = np.argmin(centr_distances, axis = 1)
-                
+        return np.argmin(centr_distances, axis=1)                
+            
+    def predict(self, data):
         return
+            
+            
+
             
             
             
