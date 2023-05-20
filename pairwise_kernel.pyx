@@ -7,20 +7,20 @@ from cython.parallel import prange
 from libc.math cimport exp, tanh
 
 
-def kernel_matrix(X, Y=None, kernel="linear", sigma=1., c=0, d=1, theta=0):
-    X, Y = cast_to_ndarray(X, Y)
+def kernel_matrix(X, Y=None, kernel="linear", variance=1., c=0, d=1, theta=0):
+    #TODO x zu [x] casten wenn notewendig
     if Y is None:
-        return kernel_matrix(X, X, kernel)
-    res_matrix = None #Used to throw error if still None at end of function
+        return kernel_matrix(X, X, kernel, variance, c, d, theta)
+    X, Y = cast_to_ndarray(X, Y)
     if kernel == "linear":
         res_matrix = linear_kernel(X, Y)
     elif kernel == "rbf":
-        res_matrix = rbf_kernel(X, Y, sigma)
+        res_matrix = rbf_kernel(X, Y, variance)
     elif kernel == "polynomial":
         res_matrix = polynomial_kernel(X, Y, c, d)
     elif kernel == "sigmoid":
         res_matrix = sigmoid_kernel(X, Y, c, theta)
-    if res_matrix is None:
+    else:
         raise ValueError(str(kernel) + " kernel not implemented")
     return np.asarray(res_matrix)
 
@@ -49,15 +49,15 @@ def linear_kernel(double[:, ::1] X, double[:, ::1] Y):
     return matr
 
     
-def rbf_kernel(double[:, ::1] X, double[:, ::1] Y, double sigma):
+def rbf_kernel(double[:, ::1] X, double[:, ::1] Y, double variance):
     cdef:
         int x_size = X.shape[0]
         int y_size = Y.shape[0]
         int dim = X.shape[1]
         Py_ssize_t i,j,k
         double sq_euclidian
-        double[:, ::1] matr = np.zeros((x_size, y_size))
-        double gamma = 1/(sigma ** 2)
+        double[:, ::1] matrix = np.zeros((x_size, y_size))
+        double gamma = 1/(variance ** 2)
     if dim != Y.shape[1]:
         raise ValueError("Dimension mismatch")
     for i in prange(x_size, nogil=True):
@@ -65,8 +65,8 @@ def rbf_kernel(double[:, ::1] X, double[:, ::1] Y, double sigma):
             sq_euclidian = 0
             for k in range(dim):
                 sq_euclidian = sq_euclidian + (X[i,k] - Y[j,k]) ** 2
-            matr[i,j] = exp(-gamma * sq_euclidian)
-    return matr
+            matrix[i,j] = exp(-gamma * sq_euclidian)
+    return matrix
 
 def sigmoid_kernel(double[:, ::1] X, double[:, ::1] Y, double c, double theta):
     cdef:
