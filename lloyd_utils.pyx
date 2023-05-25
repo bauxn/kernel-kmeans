@@ -4,26 +4,34 @@
 import numpy as np
 from cython.parallel import prange
 
-def update_clusters(distances,
-                     const double[:, ::1] kernel_matrix,
-                     const long long[::1] labels, 
-                     const int n_clusters):
+
+# Best way to deal with varying datatypes
+# MUST NOT BE CONST as cython compiler breaks otherwise
+ctypedef fused llong:
+    long
+    long long
+
+
+def lloyd_update(distances, 
+                 const double[:, ::1] kernel_matrix,
+                 llong[::1] labels, 
+                 const long n_clusters):
+
     outer_sums, inner_sums, cluster_sizes =\
         _calc_update(kernel_matrix, labels, n_clusters)
     
-    #TODO diverse dimensionality checks (distances - km,..)
     for cluster in range(n_clusters):
-        magn = cluster_sizes[cluster]
-        ks_element = outer_sums[:, cluster]
-        ks_cluster = inner_sums[cluster] 
-        distances[:,  cluster] += (-2 * ks_element / magn + 
-                                  ks_cluster / magn**2)
+        size = cluster_sizes[cluster]
+        outer_sum = outer_sums[:, cluster]
+        inner_sum = inner_sums[cluster] 
+        distances[:,  cluster] += (-2 * outer_sum / size + 
+                                  inner_sum / size**2)
     return distances, inner_sums, cluster_sizes
 
     
 
-def _calc_update(const double[:, ::1] kernel_matrix, const long long[::1] labels, const int n_clusters):
-    #TODO implement für nicht symmetrische kernel matrix, oder zumindest error schmeißen
+def _calc_update(const double[:, ::1] kernel_matrix, llong[::1] labels, const long n_clusters):
+
     cdef:
         int size = kernel_matrix.shape[0]
         double[:, ::1] inner_sum = np.zeros((size, n_clusters), dtype=np.float64)
@@ -48,8 +56,8 @@ def _calc_update(const double[:, ::1] kernel_matrix, const long long[::1] labels
 def calc_distances(inner_sums,
                   cluster_sizes,
                   const double[:, ::1] kernel_matrix,
-                  const long long [::1] labels,
-                  const int n_clusters):
+                  llong[::1] labels,
+                  const long n_clusters):
     outer_sums = np.array(_calc_outer_sums(kernel_matrix, labels, n_clusters))
     distances = np.zeros((kernel_matrix.shape[0], n_clusters))
     for cluster in range(n_clusters):
@@ -61,7 +69,7 @@ def calc_distances(inner_sums,
     return distances
 
 
-def _calc_outer_sums(const double[:, ::1] kernel_matrix, const long long[::1] labels, const int n_clusters):
+def _calc_outer_sums(const double[:, ::1] kernel_matrix, llong[::1] labels, const long n_clusters):
     cdef:
         int rows = kernel_matrix.shape[0]
         int cols = kernel_matrix.shape[1]

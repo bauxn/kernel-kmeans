@@ -1,7 +1,6 @@
 import numpy as np
-from distance_utils import update_clusters, calc_distances
-import pairwise_kernel
-
+from lloyd_utils import lloyd_update, calc_distances
+from kernel_utils import kernel_matrix
 
 class KKMeans():
     def __init__(self, n_clusters=8, init="random", n_init=1,
@@ -13,137 +12,141 @@ class KKMeans():
         self.max_iter = max_iter
         self.tol = tol
         self.verbose = verbose
-        self.random = np.random.default_rng(seed)
+        self.rng = np.random.default_rng(seed)
         self.algorithm = algorithm
         self.kernel = kernel
         self.kwargs = kwargs
         self.labels = None
-        self.inner_sums = None
-        self.trained_data = None
+        self.inner_sums = np.zeros(n_clusters)
         self.cluster_sizes = None
-        
-    def _p_kernel_wrapper(self, X, Y=None):
-        return pairwise_kernel.kernel_matrix(X, Y, kernel=self.kernel, **self.kwargs)
+        self.trained_data = None
     
+    def kernel_wrapper(self, X, Y=None):
+        return kernel_matrix(X, Y, kernel=self.kernel, **self.kwargs)
+
     def fit(self, X):
-        ''' Provides interface for user to fit data.'''
-        self._check_data(X)
+        X = self._sanitize_data(X)
+        kernel_matrix = self.kernel_wrapper(X)
         
-        if self.algorithm == "lloyd":
-            self._lloyd(X)
+        labels_store = np.zeros((self.n_init, X.shape[0]), dtype=int)
+        inertia_store = np.zeros(self.n_init)
+        inner_sums_store = np.zeros((self.n_init, self.n_clusters))
+        sizes_store = np.zeros((self.n_init, self.n_clusters), dtype=int)
+        
+        for init in range(self.n_init):
+            start_labels = self._init_labels(X, kernel_matrix)
+            if self.algorithm == "lloyd":
+                labels, inertia, inner_sums, sizes = self._lloyd(X, kernel_matrix, start_labels)
+            else:
+                raise ValueError(self.algorithm + " algorithm not implemented")
+            labels_store[init] = labels
+            inertia_store[init] = inertia
+            inner_sums_store[init] = inner_sums
+            sizes_store[init] = sizes
 
+        min_index = np.argmin(inertia_store)
+        self.labels = labels_store[min_index]
+        self.inner_sums = inner_sums_store[min_index]
+        self.cluster_sizes = sizes_store[min_index]
         self.trained_data = X
-        
-    def _check_data(self, X):
-        return
-    
-    def _lloyd(self, X):
-        '''
-        The original kkmeans algorithm.
-        _init is used to assign labels.
-        inertia is sum of squared distances to nearest centroid (==variance).
-        each row of distances is datapoint, each column centroid,
-            e.g. distances[0,0] is distance from data[0] to center of first cluster.
-        From mathematical pov distances could be initialized with 0-matrix each iter,
-            but too little time is saved to justify the risk of confusion,
-            as the resulting inertia wouldn't be variance anymore (but still as valid)
-        _lloyd_iter updates distances from each point to each centroid, by using 
-            formulas from kkmeans paper.
-        
-        '''
-        self.inner_sums = np.zeros((len(X), self.n_clusters))
-        kernel_matrix = self._p_kernel_wrapper(X)
-        self._init(X, kernel_matrix) #CALL THIS NOT IN LLOYD! 
-        inertia = 0
-        for _ in range(self.max_iter):
-            distances = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T
-            distances, self.inner_sums, self.cluster_sizes =\
-                update_clusters(distances, kernel_matrix, self.labels, self.n_clusters)
-            lables_old = self.labels
-            self.labels = np.argmin(distances, axis=1)
-            inertia_old = inertia
-            inertia = np.amin(distances, axis=1).sum() 
-            if all(lables_old == self.labels) or abs(inertia - inertia_old) < self.tol:
-                if self.verbose:
-                    print("Converged at iteration:", _ + 1,
-                          "Inertia:", inertia)
-                return
+        if self.verbose:
+            print("Min inertia:", inertia_store[min_index],
+                "Found at init:", min_index + 1)
 
+        
     
-    def _init(self, X, kernel_matrix): # TODO RENAME!!
+    def _sanitize_data(self, X):
+        X = np.asarray(X, dtype=np.float64)
+        if len(X.shape) != 2:
+            raise ValueError("X needs to be 2-d Array")
+        if 0 in X.shape:
+            raise ValueError("X is empty")
+        return X
+    
+    def _init_labels(self, X, kernel_matrix):
         '''Assign labels to each datapoint by given method'''
         if isinstance(self.init, (list, tuple, np.ndarray)):
-            self._check_centroids() # TODO 
-            self._assign_to_centroids(self.init, X)
-            return
+            self.init = self._sanitize_centers() 
+            return self._assign_to_centers(X, self.init)
         
         elif self.init == "random":
-            centroids = X[self.random.integers(0, len(X), self.n_clusters)]
-            self.labels = self._assign_to_centroids(centroids, X)
-            return
-        
+            centers = self.rng.choice(X, self.n_clusters)
+            return self._assign_to_centers(X, centers)
         elif self.init == "truerandom":
-            self.labels = self.random.integers(0, self.n_clusters, len(X))
-            return
+            return self.rng.integers(0, self.n_clusters, len(X))
         
         elif self.init == "kmeans++":
-            self.labels = self._kmeanspp(X, kernel_matrix)
-            return 
+            return self._kmeanspp(X, kernel_matrix)
         
         raise Exception("Unknown initialisation method")
     
-    def _check_centroids(self):
-        if len(self.init) != self.n_clusters:
-            raise Exception("The number of given centroids should match n_clusters") # TODO
-        return
-
-    def _assign_to_centroids(self, centroids, X):
-        '''
-        Calculates distances to each given center by using SQUARED distances,
-        as in the feature space one cannot explicitly calculate euclidian distance
-        and instead one has to rely on ||a-b||^2 == K(a,a) - 2K(a,b) + K(b,b)
-        (K(.,.) is the kernel)
-        (Here, K(a,a) is omitted since it is doesn't change for each datapoint)
-        '''
-        data_centr_kernel = self._p_kernel_wrapper(X, centroids)
-        centr_distances = np.zeros((len(X), self.n_clusters))
+    def _sanitize_centers(self, centers):
+        centers = np.asarray(centers, dtype=np.float64)
+        if len(centers.shape) != 2:
+            raise ValueError("Given centers need to be 2-d array")
+        if 0 in centers.shape:
+            raise ValueError("Given centers are empty")
+        if len(centers) != self.n_clusters:
+            raise ValueError("Amount of given centers must be equal to n_clusters")
+        return centers
+        
+    def _assign_to_centers(self, X, centers):
+        X_center_kernel = self.kernel_wrapper(X, centers)
+        dists_to_centers = np.zeros((len(x), self.n_clusters))
         for cluster in range(self.n_clusters):
-            centr_distances[:, cluster] = (-2 * data_centr_kernel[:, cluster]
-                                        + self._p_kernel_wrapper([centroids[cluster]]))
-        return np.argmin(centr_distances, axis = 1)
+            dists_to_centers[:, cluster] = (-2 * X_center_kernel[:, cluster]
+                             + self.kernel_wrapper(centers[cluster]))
+        return np.argmin(dists_to_centers, axis=1)
 
-    
     def _kmeanspp(self, X, kernel_matrix):
-        '''
-        Kmeans++ with the distance described in _assign_to_centroids.
-        Here, K(a,a) must NOT be omitted.
-        '''
-        centroids = np.zeros((self.n_clusters, len(X[0])))
-        centr_distances = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T   
+        dists_to_centers = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T
         for cluster in range(self.n_clusters):
             if cluster == 0:
-                #random first center
-                index = self.random.integers(low=0, high=len(X))
+                index = self.rng.integers(low=0, high=X.shape[0])
             else:
-                max_dist_each = np.amin(centr_distances[:, :cluster + 1], axis = 1)
-                max_dist_each[max_dist_each < 0] = 0 
+                max_dist_each = np.amin(dists_to_centers[:, :cluster + 1], axis = 1)
+                max_dist_each[max_dist_each < 0] = 0 # TODO test if really necessary
                 probs = max_dist_each/max_dist_each.sum()
-                index = self.random.choice(len(X), size=1, p=probs)
-            centroids[cluster] = X[index]
-            cluster_term = self._p_kernel_wrapper([centroids[cluster]])
-            data_term = self._p_kernel_wrapper(X, [centroids[cluster]])
-            centr_distances[:, cluster] += (-2 * data_term + cluster_term).reshape(len(X),)    
-        return np.argmin(centr_distances, axis=1)                
-            
+                index = self.rng.choice(len(X), size=1, p=probs)
+            center = X[index]
+            inner_sum = self.kernel_wrapper(center)
+            outer_sum = self.kernel_wrapper(X, center)
+            # reshape necessary as kernel_wrapper has 2dim array output
+            dists_to_centers[:, cluster] += (-2 * outer_sum + inner_sum).reshape(X.shape[0],)
+        
+        return np.argmin(dists_to_centers, axis=1)
+
+    def _lloyd(self, X, kernel_matrix, start_labels):
+        labels = start_labels
+        inertia = 0
+        for it in range(self.max_iter):
+            distances = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T
+            distances, inner_sums, cluster_sizes =\
+                    lloyd_update(distances, kernel_matrix, labels, self.n_clusters)
+            labels_old = labels
+            inertia_old = inertia
+            labels = np.argmin(distances, axis=1)
+            inertia = distances[range(distances.shape[0]), labels].sum()
+            if it == 0:
+                continue
+            if all(labels_old == labels) or abs(inertia - inertia_old) < self.tol:
+                if self.verbose:
+                    print("Converged at iteration:", it + 1,
+                        "Inertia:", inertia)
+                return labels, inertia, inner_sums, cluster_sizes
+    
     def predict(self, X):
-        kernel_matrix = self._p_kernel_wrapper(X, self.trained_data)
+        kernel_matrix = self.kernel_wrapper(X, self.trained_data)
         distances = calc_distances(self.inner_sums, 
-                                  self.cluster_sizes,
-                                  kernel_matrix,
-                                  self.labels, 
-                                  self.n_clusters)
+                                   self.cluster_sizes,
+                                   kernel_matrix,
+                                   self.labels, 
+                                   self.n_clusters)
         return np.argmin(distances, axis=1)
-            
+    
+
+
+
             
 
             

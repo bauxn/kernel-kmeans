@@ -1,4 +1,8 @@
 from distutils.core import setup
 from Cython.Build import cythonize
 
-setup(ext_modules=cythonize(["distance_utils.pyx", "pairwise_kernel.pyx"]))
+
+extensions = ["lloyd_utils.pyx", "kernel_utils.pyx"]
+compiler_directives = {"language_level": "3"}
+
+setup(ext_modules=cythonize(extensions, compiler_directives=compiler_directives))

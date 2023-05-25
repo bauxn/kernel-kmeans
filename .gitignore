@@ -5,3 +5,7 @@ setup.cfg
 *.c
 build/
 .ipynb_checkpoints/
+helper.ipynb
+.pytest_cache/
+update.ipynb
+helper.py
