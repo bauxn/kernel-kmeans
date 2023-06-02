@@ -4,7 +4,6 @@
 import numpy as np
 from cython.parallel import prange
 from libc.stdlib cimport rand
-from libc.stdio cimport printf
 
 
 # Best way to deal with varying datatypes
@@ -14,7 +13,7 @@ ctypedef fused llong:
     long long
 
 
-def lloyd_update(distances, 
+def lloyd_update(sq_distances, 
                  const double[:, ::1] kernel_matrix,
                  llong[::1] labels, 
                  const long n_clusters):
@@ -26,9 +25,9 @@ def lloyd_update(distances,
         size = cluster_sizes[cluster]
         outer_sum = outer_sums[:, cluster]
         inner_sum = inner_sums[cluster] 
-        distances[:,  cluster] += (-2 * outer_sum / size + 
+        sq_distances[:,  cluster] += (-2 * outer_sum / size + 
                                   inner_sum / size**2)
-    return distances, inner_sums, cluster_sizes
+    return sq_distances, inner_sums, cluster_sizes
 
 def _fill_empty_clusters(llong[::1] labels, const llong n_clusters):
     cdef Py_ssize_t i
@@ -74,13 +73,13 @@ def _calc_update(const double[:, ::1] kernel_matrix, llong[::1] labels, const lo
     return np.asarray(outer_sum), np.sum(inner_sum, axis=0)
 
 
-def calc_distances(inner_sums,
+def calc_sq_distances(inner_sums,
                   cluster_sizes,
                   const double[:, ::1] kernel_matrix,
                   llong[::1] labels,
                   const long n_clusters):
     outer_sums = np.array(_calc_outer_sums(kernel_matrix, labels, n_clusters))
-    distances = np.zeros((kernel_matrix.shape[0], n_clusters))
+    distances = np.tile(np.diag(kernel_matrix), (n_clusters, 1)).T
     for cluster in range(n_clusters):
         size = cluster_sizes[cluster]
         outer_sum = outer_sums[:, cluster]

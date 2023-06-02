@@ -1,16 +1,19 @@
 import numpy as np
-from lloyd_utils import lloyd_update, calc_distances
+from lloyd_utils import lloyd_update, calc_sq_distances
 from kernel_utils import kernel_matrix
+from quality_utils import calc_silhouettes
+
 
 class KKMeans():
     def __init__(self, n_clusters=8, init="random", n_init=1,
-                 max_iter=300, tol=0, verbose=0,
+                 max_iter=300, tol=0, q_metric="inertia", verbose=0,
                  seed=None, algorithm="lloyd", kernel="linear", **kwargs):
         self.n_clusters = n_clusters
         self.init = init
         self.n_init = n_init
         self.max_iter = max_iter
         self.tol = tol
+        self.q_metric = q_metric
         self.verbose = verbose
         self.rng = np.random.default_rng(seed)
         self.algorithm = algorithm
@@ -50,7 +53,7 @@ class KKMeans():
         self.cluster_sizes = sizes_store[min_index]
         self.trained_data = X
         if self.verbose:
-            print("Min inertia:", inertia_store[min_index],
+            print("Min " + self.q_metric +":", inertia_store[min_index],
                 "Found at init:", min_index + 1)
 
         
@@ -99,10 +102,11 @@ class KKMeans():
         return np.argmin(dists_to_centers, axis=1)
 
     def _kmeanspp(self, X, kernel_matrix):
-        dists_to_centers = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T
+        dists_to_centers = np.sqrt(self._build_starting_distance(kernel_matrix))
+        data_size = X.shape[0]
         for cluster in range(self.n_clusters):
             if cluster == 0:
-                index = self.rng.integers(low=0, high=X.shape[0])
+                index = self.rng.integers(low=0, high=data_size)
             else:
                 max_dist_each = np.amin(dists_to_centers[:, :cluster + 1], axis = 1)
                 max_dist_each[max_dist_each < 0] = 0 # TODO test if really necessary
@@ -112,37 +116,68 @@ class KKMeans():
             inner_sum = self.kernel_wrapper(center)
             outer_sum = self.kernel_wrapper(X, center)
             # reshape necessary as kernel_wrapper has 2dim array output
-            dists_to_centers[:, cluster] += (-2 * outer_sum + inner_sum).reshape(X.shape[0],)
+            dists_to_centers[:, cluster] += (-2 * outer_sum + inner_sum).reshape(data_size,)
         
         return np.argmin(dists_to_centers, axis=1)
 
     def _lloyd(self, X, kernel_matrix, start_labels):
         labels = start_labels
-        inertia = 0
+        quality = 0
         for it in range(self.max_iter):
-            distances = np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T
+            distances = self._build_starting_distance(kernel_matrix)
             distances, inner_sums, cluster_sizes =\
                     lloyd_update(distances, kernel_matrix, labels, self.n_clusters)
             labels_old = labels
-            inertia_old = inertia
+            quality_old = quality
             labels = np.argmin(distances, axis=1)
-            inertia = distances[range(distances.shape[0]), labels].sum()
             if it == 0:
                 continue
-            if all(labels_old == labels) or abs(inertia - inertia_old) < self.tol:
-                if self.verbose:
-                    print("Converged at iteration:", it + 1,
-                        "Inertia:", inertia)
-                return labels, inertia, inner_sums, cluster_sizes
+
+            if self.tol != 0:
+                quality_old = quality
+                quality = self._calculate_quality(distances, labels, kernel_matrix)
+                if abs(quality - quality_old) < self.tol:
+                    self._verbose_output(it, quality)
+                    break
+            
+            if all(labels_old == labels):
+                if self.tol == 0:
+                    quality = self._calculate_quality(distances, labels, kernel_matrix)
+                self._verbose_output(it, quality)
+                break
+        
+        return labels, quality, inner_sums, cluster_sizes
+    
+    def _verbose_output(self, iteration, quality):
+        if self.verbose:
+            print("Converged at iteration:", iteration + 1,    
+                self.q_metric, quality)
     
     def predict(self, X):
         kernel_matrix = self.kernel_wrapper(X, self.trained_data)
-        distances = calc_distances(self.inner_sums, 
-                                   self.cluster_sizes,
-                                   kernel_matrix,
-                                   self.labels, 
-                                   self.n_clusters)
-        return np.argmin(distances, axis=1)
+        sq_distances = calc_sq_distances(self.inner_sums, 
+                                  self.cluster_sizes,
+                                  kernel_matrix,
+                                  self.labels, 
+                                  self.n_clusters)
+        return np.argmin(np.sqrt(sq_distances), axis=1)
+    
+    def _calculate_quality(self, sq_distances, labels, kernel_matrix):
+        if self.q_metric == "inertia":
+            return sq_distances[range(sq_distances.shape[0]), labels].sum()
+        elif self.q_metric == "silhouette":
+            return self.calc_silhouette(sq_distances, labels)
+        else:
+            raise NotImplementedError(str(self.q_metric) + " quality metric not implemented")
+    
+    def calc_silhouette(self, sq_distances, labels):
+        dists = np.sqrt(sq_distances)
+        silhouettes = calc_silhouettes(dists, labels)
+        return sum(silhouettes) / len(silhouettes)
+    
+    def _build_starting_distance(self, kernel_matrix):
+        return np.ascontiguousarray(np.tile(np.diag(kernel_matrix), (self.n_clusters, 1)).T)
+
     
 
 
