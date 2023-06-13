@@ -6,16 +6,9 @@ from cython.parallel import prange
 from libc.stdlib cimport rand
 
 
-# Best way to deal with varying datatypes
-# MUST NOT BE CONST as cython compiler breaks otherwise
-ctypedef fused llong:
-    long
-    long long
-
-
 def lloyd_update(sq_distances, 
                  const double[:, ::1] kernel_matrix,
-                 llong[::1] labels, 
+                 long[::1] labels, 
                  const long n_clusters):
                  
     cdef Py_ssize_t cluster
@@ -31,9 +24,9 @@ def lloyd_update(sq_distances,
                                   inner_sum / size**2)
     return sq_distances, inner_sums, cluster_sizes
 
-def _fill_empty_clusters(llong[::1] labels, const llong n_clusters):
+def _fill_empty_clusters(long[::1] labels, const long n_clusters):
     cdef Py_ssize_t i, index
-    cdef llong l_size = labels.size
+    cdef long l_size = labels.size
     
     while True:
         cluster_sizes = np.asarray(calc_sizes(labels, n_clusters))
@@ -47,7 +40,7 @@ def _fill_empty_clusters(llong[::1] labels, const llong n_clusters):
             labels[index] = empty_cluster_indices[i]
     return labels, np.asarray(cluster_sizes)
     
-cpdef calc_sizes(llong[::1] labels, const long n_clusters):
+cpdef calc_sizes(long[::1] labels, const long n_clusters):
     cdef:
         Py_ssize_t size = labels.shape[0] 
         Py_ssize_t i
@@ -57,7 +50,7 @@ cpdef calc_sizes(llong[::1] labels, const long n_clusters):
     return sizes
 
 
-def _calc_update(const double[:, ::1] kernel_matrix, llong[::1] labels, const long n_clusters):
+def _calc_update(const double[:, ::1] kernel_matrix, long[::1] labels, const long n_clusters):
 
     cdef:
         int size = kernel_matrix.shape[0]
@@ -80,7 +73,7 @@ def _calc_update(const double[:, ::1] kernel_matrix, llong[::1] labels, const lo
 def calc_sq_distances(inner_sums,
                   cluster_sizes,
                   const double[:, ::1] kernel_matrix,
-                  llong[::1] labels,
+                  long[::1] labels,
                   const long n_clusters):
     outer_sums = np.array(_calc_outer_sums(kernel_matrix, labels, n_clusters))
     distances = np.tile(np.diag(kernel_matrix), (n_clusters, 1)).T
@@ -93,7 +86,7 @@ def calc_sq_distances(inner_sums,
     return distances
 
 
-def _calc_outer_sums(const double[:, ::1] kernel_matrix, llong[::1] labels, const long n_clusters):
+def _calc_outer_sums(const double[:, ::1] kernel_matrix, long[::1] labels, const long n_clusters):
     cdef:
         int rows = kernel_matrix.shape[0]
         int cols = kernel_matrix.shape[1]

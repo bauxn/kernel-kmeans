@@ -37,8 +37,8 @@ class KKMeans():
         kernel_matrix = self.kernel_wrapper(X)
         
         labels_store = np.zeros((self.n_init, X.shape[0]), dtype=np.int_)
-        quality_store = np.zeros(self.n_init)
-        inner_sums_store = np.zeros((self.n_init, self.n_clusters))
+        quality_store = np.zeros(self.n_init, dtype=np.double)
+        inner_sums_store = np.zeros((self.n_init, self.n_clusters), dtype=np.double)
         sizes_store = np.zeros((self.n_init, self.n_clusters), dtype=np.int_)
         
         for init in range(self.n_init):
@@ -105,7 +105,7 @@ class KKMeans():
             centers = self.rng.choice(X, self.n_clusters)
             return self._assign_to_centers(X, centers)
         elif self.init == "truerandom":
-            return self.rng.integers(0, self.n_clusters, len(X))
+            return self.rng.integers(0, self.n_clusters, len(X), dtype=np.int_)
         
         elif self.init == "kmeans++":
             return self._kmeanspp(X, kernel_matrix)
@@ -113,7 +113,7 @@ class KKMeans():
         raise NotImplementedError("Unknown initialisation method")
     
     def _sanitize_centers(self, centers):
-        centers = np.asarray(centers, dtype=np.float64)
+        centers = np.asarray(centers, dtype=np.double)
         if len(centers.shape) != 2:
             raise ValueError("Given centers need to be 2-d array")
         if 0 in centers.shape:
@@ -128,7 +128,7 @@ class KKMeans():
         for cluster in range(self.n_clusters):
             dists_to_centers[:, cluster] = (-2 * X_center_kernel[:, cluster]
                              + self.kernel_wrapper(centers[cluster]))
-        return np.argmin(dists_to_centers, axis=1)
+        return np.array(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
 
     def _kmeanspp(self, X, kernel_matrix):
         dists_to_centers = self._build_starting_distance(kernel_matrix)
@@ -138,18 +138,17 @@ class KKMeans():
                 index = self.rng.integers(low=0, high=data_size)
             else:
                 max_dist_each = np.amin(dists_to_centers[:, :cluster + 1], axis = 1)
-                #max_dist_each[max_dist_each < 0] = 0 # TODO test if really necessary
                 probs = max_dist_each/max_dist_each.sum()
                 index = self.rng.choice(len(X), size=1, p=probs)
             center = X[index]
             inner_sum = self.kernel_wrapper(center)
             outer_sum = self.kernel_wrapper(X, center)
             # reshape necessary as kernel_wrapper has 2dim array output
-            dists_to_centers[:, cluster] += (-2 * outer_sum + inner_sum).reshape(data_size,) 
-        
-        #TODO SQRT!! dists_to_centers = sqrt(dists_to_centers)
+            dists_to_centers[:, cluster] += (-2 * outer_sum + inner_sum).reshape(data_size,)
+            dists_to_centers[:, cluster] = np.sqrt(dists_to_centers[:, cluster])
+             
             
-        return np.argmin(dists_to_centers, axis=1)
+        return np.array(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
 
     def _lloyd(self, kernel_matrix, labels):
         quality = 0
@@ -239,6 +238,8 @@ class KKMeans():
                 break
 
         return labels, quality, inner_sums, sizes
+
+
 
 
 
