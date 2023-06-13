@@ -9,3 +9,4 @@ helper.ipynb
 .pytest_cache/
 update.ipynb
 helper.py
+test.pyx

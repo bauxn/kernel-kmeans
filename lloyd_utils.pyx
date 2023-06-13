@@ -17,6 +17,8 @@ def lloyd_update(sq_distances,
                  const double[:, ::1] kernel_matrix,
                  llong[::1] labels, 
                  const long n_clusters):
+                 
+    cdef Py_ssize_t cluster
 
     labels, cluster_sizes = _fill_empty_clusters(labels, n_clusters)
     outer_sums, inner_sums = _calc_update(kernel_matrix, labels, n_clusters)
@@ -30,20 +32,22 @@ def lloyd_update(sq_distances,
     return sq_distances, inner_sums, cluster_sizes
 
 def _fill_empty_clusters(llong[::1] labels, const llong n_clusters):
-    cdef Py_ssize_t i
+    cdef Py_ssize_t i, index
+    cdef llong l_size = labels.size
     
     while True:
-        cluster_sizes = np.asarray(_calc_sizes(labels, n_clusters))
+        cluster_sizes = np.asarray(calc_sizes(labels, n_clusters))
         empty_cluster_indices = np.flatnonzero(cluster_sizes == 0)
         amount_empty_clusters = empty_cluster_indices.size
         if(amount_empty_clusters == 0):
             break
         for i in range(amount_empty_clusters):
             print("Warning! Empty cluster encountered, consider using different n_cluster. Random element assigned to emtpy cluster")
-            labels[rand() % labels.size] = empty_cluster_indices[i]
+            index = rand() % l_size
+            labels[index] = empty_cluster_indices[i]
     return labels, np.asarray(cluster_sizes)
     
-cdef _calc_sizes(llong[::1] labels, const long n_clusters):
+cpdef calc_sizes(llong[::1] labels, const long n_clusters):
     cdef:
         Py_ssize_t size = labels.shape[0] 
         Py_ssize_t i
