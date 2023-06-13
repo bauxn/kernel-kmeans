@@ -6,6 +6,8 @@
 import numpy as np
 from cython.parallel import prange
 from libc.math cimport sqrt, fabs
+from utils import fill_empty_clusters, calc_sizes
+from utils cimport calc_outer_sum_single
 
 
 
@@ -19,11 +21,11 @@ def update_elkan(
         double[::1] inner_sums,
         long n_clusters
     ):
-
+    #TODO fill empty clusters
     sizes_old = sizes
     sizes = np.array(calc_sizes(labels, n_clusters), dtype=np.int_)
     inner_sums_old = inner_sums
-    inner_sums, inner_sums_mixed = calc_inner_sums(kernel_matrix, labels, labels_old, n_clusters)
+    inner_sums_mixed, inner_sums = calc_inner_sum_mixed(kernel_matrix, labels, labels_old, n_clusters, return_new_sum=True)
     center_dists += calc_center_dists(inner_sums, inner_sums_mixed, inner_sums_old, sizes, sizes_old)
     l_bounds = est_lower_bounds(kernel_matrix, l_bounds, center_dists, labels, sizes, inner_sums)
 
@@ -49,15 +51,16 @@ def est_lower_bounds(
 
     for i in prange(l_bounds.shape[0], nogil=True):
         labels_i = labels[i]
-        outer_sum = calc_outer_sum(kernel_matrix, i, labels_i, labels)
-        l_bounds[i, labels_i] = (kernel_matrix[i, i] 
+        outer_sum = calc_outer_sum_single(kernel_matrix, i, labels_i, labels)
+        l_bounds[i, labels_i] = (
+            kernel_matrix[i, i] 
             - 2 * outer_sum / sizes[labels_i] 
             + inner_sums[labels_i] / sizes[labels_i]**2
         )
         center_dists[i, labels_i] = 0
         for j in range(l_bounds.shape[1]):
-            if fabs(sqrt(l_bounds[i, j]) - center_dists[i, j]) < sqrt(l_bounds[i, labels_i]): #or j == labels_i:
-                outer_sum = calc_outer_sum(kernel_matrix, i, j, labels)
+            if fabs(sqrt(l_bounds[i, j]) - center_dists[i, j]) < sqrt(l_bounds[i, labels_i]): 
+                outer_sum = calc_outer_sum_single(kernel_matrix, i, j, labels)
                 l_bounds[i, j] = kernel_matrix[i, i] - 2 * outer_sum / sizes[j] + inner_sums[j] / sizes[j]**2
                 center_dists[i, j] = 0
     return np.asarray(l_bounds)
@@ -85,12 +88,12 @@ def calc_center_dists(double[::1] inner_sums_new, double[::1] inner_sums_mixed, 
         old_sum = inner_sums_old[i]
         dists[i] = sqrt(new_sum / new_size**2 - 2 * mixed_sum / (new_size * old_size) + old_sum / old_size**2)
     
-    return np.array(dists) 
+    return np.asarray(dists) 
     
 
 
 
-def calc_inner_sums(double[:, ::1] kernel_matrix, long[::1] labels, long[::1] labels_old, long n_clusters):
+def calc_inner_sum_mixed(double[:, ::1] kernel_matrix, long[::1] labels, long[::1] labels_old, long n_clusters, return_new_sum=True):
     cdef:
         Py_ssize_t rows = kernel_matrix.shape[0]
         Py_ssize_t cols = kernel_matrix.shape[1]
@@ -108,54 +111,102 @@ def calc_inner_sums(double[:, ::1] kernel_matrix, long[::1] labels, long[::1] la
                 sums_new[i, labels_j_new] += kernel_matrix[i, j]
             if labels_i == labels_j_old:
                 sums_mixed[i, labels_j_old] += kernel_matrix[i, j]
+    if return_new_sum:
+        return np.sum(sums_mixed, axis=0), np.sum(sums_new, axis=0)
+    return np.sum(sums_mixed, axis=0)
+
+
+
+# TODO start_elkan == update_lloyd, added here to have seperate implementations
+# _calc_update also the same as in lloyd.pyx
+def start_elkan(sq_distances, 
+                 const double[:, ::1] kernel_matrix,
+                 long[::1] labels, 
+                 const long n_clusters):
+
+    cdef Py_ssize_t cluster
+
+    labels, cluster_sizes = fill_empty_clusters(labels, n_clusters, return_sizes=True)
+    outer_sums, inner_sums = _calc_update(kernel_matrix, labels, n_clusters)
     
-    return np.sum(sums_new, axis=0), np.sum(sums_mixed, axis=0)
-
-cpdef double calc_outer_sum(double[:, ::1] kernel_matrix, long elem_index, long cluster_index, long[::1] labels) nogil:
-    cdef:
-        double outer_sum = 0.
-        Py_ssize_t i
-        Py_ssize_t size = len(labels)
-    for i in range(size):
-        if labels[i] == cluster_index:
-            outer_sum += kernel_matrix[elem_index, i]
-    return outer_sum
-
-cpdef long[::1] calc_sizes(long[::1] labels, long n_clusters):
-    cdef:
-        Py_ssize_t size = labels.shape[0] 
-        Py_ssize_t i
-        long[::1] sizes = np.zeros(n_clusters, dtype=np.int_)
-    for i in range(size):
-        sizes[labels[i]] += 1
-    return sizes
+    for cluster in range(n_clusters):
+        size = cluster_sizes[cluster]
+        outer_sum = outer_sums[:, cluster]
+        inner_sum = inner_sums[cluster] 
+        sq_distances[:,  cluster] += (-2 * outer_sum / size + 
+                                  inner_sum / size**2)
+    return sq_distances, inner_sums, cluster_sizes
 
 
-def est_lower_bounds_old(
-        double[:, ::1] kernel_matrix, 
-        double[:, ::1] l_bounds, 
-        double[:, ::1] center_dists, 
-        long[::1] labels, 
-        long[::1] sizes, 
-        double[::1] inner_sums
-    ):
+def _calc_update(const double[:, ::1] kernel_matrix, long[::1] labels, const long n_clusters):
 
     cdef:
-        Py_ssize_t i, j, labels_i
-        double outer_sum
+        int size = kernel_matrix.shape[0]
+        double[:, ::1] inner_sum = np.zeros((size, n_clusters), dtype=np.double)
+        double[:, ::1] outer_sum = np.zeros((size, n_clusters), dtype=np.double)
+        int i,j
+        double kernel_ij
+        int label_i, label_j
+    for i in prange(size, nogil=True):
+        label_i = labels[i]
+        for j in range(size):
+            label_j = labels[j]
+            kernel_ij = kernel_matrix[i, j]
+            outer_sum[i, label_j] += kernel_ij      
+            if label_i == label_j:
+                inner_sum[i, label_j] += kernel_ij
+    return np.asarray(outer_sum), np.sum(inner_sum, axis=0)
 
-    assert l_bounds.shape[0] == labels.shape[0]
-    assert l_bounds.shape[1] == inner_sums.shape[0]
+
+
+
+
+
+# cpdef double calc_outer_sum(double[:, ::1] kernel_matrix, long elem_index, long cluster_index, long[::1] labels) nogil:
+#     cdef:
+#         double outer_sum = 0.
+#         Py_ssize_t i
+#         Py_ssize_t size = len(labels)
+#     for i in range(size):
+#         if labels[i] == cluster_index:
+#             outer_sum += kernel_matrix[elem_index, i]
+#     return outer_sum
+
+# cpdef long[::1] calc_sizes(long[::1] labels, long n_clusters):
+#     cdef:
+#         Py_ssize_t size = labels.shape[0] 
+#         Py_ssize_t i
+#         long[::1] sizes = np.zeros(n_clusters, dtype=np.int_)
+#     for i in range(size):
+#         sizes[labels[i]] += 1
+#     return sizes
+
+
+# def est_lower_bounds_old(
+#         double[:, ::1] kernel_matrix, 
+#         double[:, ::1] l_bounds, 
+#         double[:, ::1] center_dists, 
+#         long[::1] labels, 
+#         long[::1] sizes, 
+#         double[::1] inner_sums
+#     ):
+
+#     cdef:
+#         Py_ssize_t i, j, labels_i
+#         double outer_sum
+
+#     assert l_bounds.shape[0] == labels.shape[0]
+#     assert l_bounds.shape[1] == inner_sums.shape[0]
     
 
-    for i in prange(l_bounds.shape[0], nogil=True):
-        labels_i = labels[i]
-        for j in range(l_bounds.shape[1]):
-            if fabs(sqrt(l_bounds[i, j]) - center_dists[i, j]) < sqrt(l_bounds[i, labels_i]):
-                outer_sum = calc_outer_sum(kernel_matrix, i, j, labels)
-                l_bounds[i, j] = kernel_matrix[i, i] - 2 * outer_sum / sizes[j] + inner_sums[j] / sizes[j]**2
-                center_dists[i, j] = 0
-    return np.asarray(l_bounds)
+#     for i in prange(l_bounds.shape[0], nogil=True):
+#         labels_i = labels[i]
+#         for j in range(l_bounds.shape[1]):
+#             if fabs(sqrt(l_bounds[i, j]) - center_dists[i, j]) < sqrt(l_bounds[i, labels_i]):
+#                 outer_sum = calc_outer_sum(kernel_matrix, i, j, labels)
+#                 l_bounds[i, j] = kernel_matrix[i, i] - 2 * outer_sum / sizes[j] + inner_sums[j] / sizes[j]**2
+#                 center_dists[i, j] = 0
+#     return np.asarray(l_bounds)
 
 
 

@@ -44,7 +44,7 @@ class KKMeans():
         for init in range(self.n_init):
             start_labels = self._init_labels(X, kernel_matrix)
             if self.algorithm == "lloyd":
-                labels, quality, inner_sums, sizes = self._lloyd(kernel_matrix, start_labels)
+                labels, quality, inner_sums, sizes = self.lloyd(kernel_matrix, start_labels)
             elif self.algorithm == "elkan":
                 labels, quality, inner_sums, sizes = self._elkan(kernel_matrix, start_labels)
             else:
@@ -72,11 +72,8 @@ class KKMeans():
         if self.n_init <= 0:
             raise ValueError("n_inits needs to be at least 1")
 
-        if data.shape[0] <  self.n_clusters:
+        if data.shape[0] < self.n_clusters:
             raise ValueError("sample:cluster ratio needs to be at least one")
-        
-
-
         
     def _get_best_init(self, quality_store):
         if self.q_metric == "inertia":
@@ -108,7 +105,7 @@ class KKMeans():
             return self.rng.integers(0, self.n_clusters, len(X), dtype=np.int_)
         
         elif self.init == "kmeans++":
-            return self._kmeanspp(X, kernel_matrix)
+            return self.kmeanspp(X, kernel_matrix)
         
         raise NotImplementedError("Unknown initialisation method")
     
@@ -130,7 +127,7 @@ class KKMeans():
                              + self.kernel_wrapper(centers[cluster]))
         return np.array(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
 
-    def _kmeanspp(self, X, kernel_matrix):
+    def kmeanspp(self, X, kernel_matrix):
         dists_to_centers = self._build_starting_distance(kernel_matrix)
         data_size = X.shape[0]
         for cluster in range(self.n_clusters):
@@ -150,7 +147,7 @@ class KKMeans():
             
         return np.array(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
 
-    def _lloyd(self, kernel_matrix, labels):
+    def lloyd(self, kernel_matrix, labels):
         quality = 0
         for it in range(self.max_iter):
             distances = self._build_starting_distance(kernel_matrix)

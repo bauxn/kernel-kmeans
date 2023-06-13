@@ -15,7 +15,7 @@ def calc_silhouettes(double[:, ::1] distances, long[::1] labels):
         Py_ssize_t n_clusters = distances.shape[1]
         double[::1] silhouettes = np.zeros(data_size)
         Py_ssize_t i, j
-        llong labels_i
+        long labels_i
         double a, b
 
     for i in prange(data_size, nogil=True):

@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-seed = 0
-rng = np.random.default_rng(seed)
+SEED = 0
+RNG = np.random.default_rng(SEED)
 
 def create_labels(sizes, shuffled=True):
     labels = np.concatenate([np.linspace(i, i, sizes[i], dtype=np.int_) for i in range(len(sizes))])
     if shuffled:
-        rng.shuffle(labels)
+        RNG.shuffle(labels)
     return labels
 
 def split_integer(integer, part_size):

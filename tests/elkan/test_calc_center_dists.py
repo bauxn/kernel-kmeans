@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
-from tests.conftest import create_labels, rng, split_integer
+from tests.conftest import create_labels, RNG, split_integer
 from sklearn.metrics.pairwise import pairwise_kernels
 from sklearn.datasets import make_blobs
 from scipy.spatial.distance import euclidean
 from sklearn.neighbors import NearestCentroid
-from elkan_utils import calc_center_dists
+from elkan import calc_center_dists
 
 '''
 To see if this works correctly, there will be tests that do not only check 
@@ -23,7 +23,7 @@ distances between the new and old centers are correct.
 def test_math_linear_generated(lim_upper, n_clusters, size, n_features):
     if size < n_clusters:
         pytest.xfail("create labels does not expect more cluster than samples")
-    data = rng.random((size, n_features)) * lim_upper
+    data = RNG.random((size, n_features)) * lim_upper
     labels = create_labels(split_integer(size, size // n_clusters))
     labels_old = create_labels(split_integer(size, size // n_clusters))
     km = pairwise_kernels(data, metric="linear")
@@ -51,7 +51,7 @@ def test_math_linear_generated(lim_upper, n_clusters, size, n_features):
 def test_same_centers_no_distance(lim_upper, n_clusters, size, n_features):
     if size < n_clusters:
         pytest.xfail("create labels does not expect more cluster than samples")
-    data = rng.random((size, n_features)) * lim_upper
+    data = RNG.random((size, n_features)) * lim_upper
     labels = create_labels(split_integer(size, size // n_clusters))
     sums_new = np.zeros(n_clusters, dtype=np.double)
     km = pairwise_kernels(data, metric="linear")

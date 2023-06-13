@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from kernel_utils import kernel_matrix as km
+from kernels import build_kernel_matrix as km
 from sklearn.metrics.pairwise import pairwise_kernels as pk
 
 seed = 0

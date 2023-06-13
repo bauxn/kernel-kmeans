@@ -6,19 +6,19 @@ import numpy as np
 from cython.parallel import prange
 from libc.math cimport exp, tanh
 
-def kernel_matrix(X, Y=None, kernel="linear", variance=None, c=1, d=3, theta=1):
+def build_kernel_matrix(X, Y=None, kernel="linear", variance=None, c=1, d=3, theta=1):
 
     X, Y = _sanitize_data(X, Y)
     if variance is None:
         variance = np.sqrt(X.shape[1])
     if kernel == "linear":
-        return np.asarray(_linear_kernel(X, Y))
+        return np.asarray(linear_kernel(X, Y))
     elif kernel == "rbf":
-        return np.asarray(_rbf_kernel(X, Y, variance))
+        return np.asarray(rbf_kernel(X, Y, variance))
     elif kernel == "polynomial":
-        return np.asarray(_polynomial_kernel(X, Y, c, d))
+        return np.asarray(polynomial_kernel(X, Y, c, d))
     elif kernel == "sigmoid":
-        return np.asarray(_sigmoid_kernel(X, Y, c, theta))
+        return np.asarray(sigmoid_kernel(X, Y, c, theta))
     else:
         raise NotImplementedError(str(kernel) + " kernel not implemented")
 
@@ -49,7 +49,7 @@ def _cast_to_ndarray(X, Y):
     return X, Y
 
 
-cpdef _linear_kernel(double[:, ::1] X, double[:, ::1] Y):
+cpdef linear_kernel(double[:, ::1] X, double[:, ::1] Y):
     cdef:
         Py_ssize_t x_size = X.shape[0]
         Py_ssize_t y_size = Y.shape[0]
@@ -67,7 +67,7 @@ cpdef _linear_kernel(double[:, ::1] X, double[:, ::1] Y):
     return matrix
 
     
-cpdef _rbf_kernel(double[:, ::1] X, double[:, ::1] Y, double variance):
+cpdef rbf_kernel(double[:, ::1] X, double[:, ::1] Y, double variance):
     cdef:
         Py_ssize_t x_size = X.shape[0]
         Py_ssize_t y_size = Y.shape[0]
@@ -89,7 +89,7 @@ cpdef _rbf_kernel(double[:, ::1] X, double[:, ::1] Y, double variance):
             matrix[i,j] = exp(-gamma * sq_euclidian)
     return matrix
 
-cpdef _sigmoid_kernel(double[:, ::1] X, double[:, ::1] Y, double c, double theta):
+cpdef sigmoid_kernel(double[:, ::1] X, double[:, ::1] Y, double c, double theta):
     cdef:
         Py_ssize_t x_size = X.shape[0]
         Py_ssize_t y_size = Y.shape[0]
@@ -106,7 +106,7 @@ cpdef _sigmoid_kernel(double[:, ::1] X, double[:, ::1] Y, double c, double theta
             matrix[i,j] = tanh(c * dot_prod + theta)
     return matrix
 
-cpdef _polynomial_kernel(double[:, ::1] X, double[:, ::1] Y, double c, int d):
+cpdef polynomial_kernel(double[:, ::1] X, double[:, ::1] Y, double c, int d):
     cdef:
         Py_ssize_t x_size = X.shape[0]
         Py_ssize_t y_size = Y.shape[0]
