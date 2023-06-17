@@ -1,10 +1,9 @@
 import numpy as np
-from time import time
-from lloyd_utils import lloyd_update, calc_sq_distances, calc_sizes
-from kernel_utils import kernel_matrix
+from lloyd import update_lloyd
+from utils import calc_sq_distances
+from kernels import build_kernel_matrix
 from quality_utils import calc_silhouettes
-from elkan_utils import update_elkan
-start_elkan = lloyd_update  #TODO 
+from elkan import update_elkan, start_elkan
 
 class KKMeans():
     def __init__(self, n_clusters=8, init="random", n_init=3,
@@ -28,7 +27,7 @@ class KKMeans():
         self.quality = None
     
     def kernel_wrapper(self, X, Y=None):
-        return kernel_matrix(X, Y, kernel=self.kernel, **self.kwargs)
+        return build_kernel_matrix(X, Y, kernel=self.kernel, **self.kwargs)
 
     def fit(self, X):
         
@@ -44,7 +43,7 @@ class KKMeans():
         for init in range(self.n_init):
             start_labels = self._init_labels(X, kernel_matrix)
             if self.algorithm == "lloyd":
-                labels, quality, inner_sums, sizes = self.lloyd(kernel_matrix, start_labels)
+                labels, quality, inner_sums, sizes = self._lloyd(kernel_matrix, start_labels)
             elif self.algorithm == "elkan":
                 labels, quality, inner_sums, sizes = self._elkan(kernel_matrix, start_labels)
             else:
@@ -72,8 +71,11 @@ class KKMeans():
         if self.n_init <= 0:
             raise ValueError("n_inits needs to be at least 1")
 
-        if data.shape[0] < self.n_clusters:
+        if data.shape[0] <  self.n_clusters:
             raise ValueError("sample:cluster ratio needs to be at least one")
+        
+
+
         
     def _get_best_init(self, quality_store):
         if self.q_metric == "inertia":
@@ -105,11 +107,12 @@ class KKMeans():
             return self.rng.integers(0, self.n_clusters, len(X), dtype=np.int_)
         
         elif self.init == "kmeans++":
-            return self.kmeanspp(X, kernel_matrix)
+            return self._kmeanspp(X, kernel_matrix)
         
         raise NotImplementedError("Unknown initialisation method")
     
     def _sanitize_centers(self, centers):
+        #TODO 1 dim centers
         centers = np.asarray(centers, dtype=np.double)
         if len(centers.shape) != 2:
             raise ValueError("Given centers need to be 2-d array")
@@ -125,9 +128,10 @@ class KKMeans():
         for cluster in range(self.n_clusters):
             dists_to_centers[:, cluster] = (-2 * X_center_kernel[:, cluster]
                              + self.kernel_wrapper(centers[cluster]))
+            dists_to_centers[:, cluster] = np.sqrt(dists_to_centers[:, cluster])
         return np.array(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
 
-    def kmeanspp(self, X, kernel_matrix):
+    def _kmeanspp(self, X, kernel_matrix):
         dists_to_centers = self._build_starting_distance(kernel_matrix)
         data_size = X.shape[0]
         for cluster in range(self.n_clusters):
@@ -147,14 +151,14 @@ class KKMeans():
             
         return np.array(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
 
-    def lloyd(self, kernel_matrix, labels):
+    def _lloyd(self, kernel_matrix, labels):
         quality = 0
         for it in range(self.max_iter):
             distances = self._build_starting_distance(kernel_matrix)
             distances, inner_sums, cluster_sizes =\
-                    lloyd_update(distances, kernel_matrix, labels, self.n_clusters)
+                    update_lloyd(distances, kernel_matrix, labels, self.n_clusters)
             labels_old = labels
-            labels = np.argmin(distances, axis=1)
+            labels = np.asarray(np.argmin(distances, axis=1), dtype=np.int_)
             
             quality, converged = self.measure_iter(distances, labels, labels_old, quality)
             self._out_verbose(it, quality, converged=converged)
@@ -236,19 +240,3 @@ class KKMeans():
 
         return labels, quality, inner_sums, sizes
 
-
-
-
-
-    
-
-
-
-            
-
-            
-            
-
-            
-            
-            
