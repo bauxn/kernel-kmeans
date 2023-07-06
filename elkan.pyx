@@ -1,8 +1,3 @@
-# cython: boundscheck=False
-# cython: wraparound=False
-# cython: cdivision=True
-# distutils: extra_compile_args = /openmp
-
 import numpy as np
 from cython.parallel import prange
 from libc.math cimport sqrt, fabs

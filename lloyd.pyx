@@ -1,6 +1,3 @@
-# cython: boundscheck=False
-# cython: wraparound=False
-# distutils: extra_compile_args = /openmp
 import numpy as np
 from cython.parallel import prange
 from utils import fill_empty_clusters, calc_sums_full
