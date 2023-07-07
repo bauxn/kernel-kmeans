@@ -1,1 +1,0 @@
-cpdef double calc_outer_sum_single(double[:, ::1] kernel_matrix, long elem_index, long cluster_index, long[::1] labels) nogil

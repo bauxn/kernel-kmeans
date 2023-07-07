@@ -24,7 +24,7 @@ extensions = [
     Extension("lloyd", ["lloyd.pyx"], extra_compile_args=compile_args),
     Extension("elkan", ["elkan.pyx"], extra_compile_args=compile_args),
     Extension("kernels", ["kernels.pyx"], extra_compile_args=compile_args),
-    Extension("quality_utils", ["quality_utils.pyx"], extra_compile_args=compile_args),
+    Extension("quality", ["quality.pyx"], extra_compile_args=compile_args),
 ]
               
 setup(ext_modules=cythonize(extensions, compiler_directives=compiler_directives))

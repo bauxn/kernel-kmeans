@@ -1,8 +1,7 @@
 import numpy as np
 from cython.parallel import prange
-from libc.math cimport sqrt, fabs
-from utils import fill_empty_clusters, calc_sizes, calc_sums_full
-from utils cimport calc_outer_sum_single
+from libc.math cimport sqrt 
+from utils import fill_empty_clusters
 
 
 
@@ -31,9 +30,7 @@ def est_lower_bounds(
         double[:, ::1] center_dists, 
         long[::1] labels, 
         long[::1] sizes, 
-        double[::1] inner_sums
-        ):
-
+        double[::1] inner_sums):
     cdef:
         Py_ssize_t i, j, labels_i
         double outer_sum
@@ -130,3 +127,31 @@ def start_elkan(sq_distances,
     return sq_distances, inner_sums, cluster_sizes
 
 
+def calc_sums_full(const double[:, ::1] kernel_matrix, long[::1] labels, const long n_clusters):
+
+    cdef:
+        int rows = kernel_matrix.shape[0]
+        int cols = kernel_matrix.shape[1]
+        double[:, ::1] inner_sum = np.zeros((rows, n_clusters), dtype=np.double)
+        double[:, ::1] outer_sum = np.zeros((rows, n_clusters), dtype=np.double)
+        int i,j
+        int label_i, label_j
+    for i in prange(rows, nogil=True):
+        label_i = labels[i]
+        for j in range(cols):
+            label_j = labels[j]
+            outer_sum[i, label_j] += kernel_matrix[i, j]      
+            if label_i == label_j:
+                inner_sum[i, label_j] += kernel_matrix[i, j]
+    return np.asarray(outer_sum), np.sum(inner_sum, axis=0)
+
+
+cdef double calc_outer_sum_single(double[:, ::1] kernel_matrix, long elem_index, long cluster_index, long[::1] labels) nogil:
+    cdef:
+        double outer_sum = 0.
+        Py_ssize_t i
+        Py_ssize_t size = len(labels)
+    for i in range(size):
+        if labels[i] == cluster_index:
+            outer_sum += kernel_matrix[elem_index, i]
+    return outer_sum
