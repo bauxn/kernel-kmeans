@@ -2,11 +2,11 @@ import numpy as np
 from cython.parallel import prange
 from utils import fill_empty_clusters
 
-def update_lloyd(sq_distances, 
-                 const double[:, ::1] kernel_matrix,
-                 long[::1] labels, 
-                 const long n_clusters):
-                 
+def update_lloyd(
+        sq_distances, 
+        double[:, ::1] kernel_matrix,
+        long[::1] labels, 
+        long n_clusters):         
     cdef Py_ssize_t cluster
 
     labels, cluster_sizes = fill_empty_clusters(labels, n_clusters, return_sizes=True)

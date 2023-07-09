@@ -1,8 +1,11 @@
-from distutils.core import setup
+from setuptools.extension import Extension
+from setuptools import setup, Extension
+# from distutils.core import setup
+# from distutils.extension import Extension
 from Cython.Build import cythonize
-
-from distutils.extension import Extension
 from distutils.ccompiler import new_compiler  # used to determine command line argument for openmMP 
+from argparse import ArgumentParser
+
 
 compile_args = ["-O3", "-ffast-math", "-DCYTHON_WITHOUT_ASSERTIONS", "-fopenmp"]
 
@@ -10,7 +13,13 @@ ccompiler = new_compiler()
 if ccompiler.compiler_type == "msvc":
     compile_args = ["/O2", "-DCYTHON_WITHOUT_ASSERTIONS", "/openmp"]
 
-# TODO: command line arg, dann mach compile_args = ["-DCYTHON_WITHOUT_ASSERTIONS"] + [command line args]
+parser = ArgumentParser()
+parser.add_argument("-C", "--cargs", nargs="*", required=False)
+args = parser.parse_args()
+
+if args.cargs is not None:
+    compile_args = ["-DCYTHON_WITHOUT_ASSERTIONS"] + args.cargs
+
 
 compiler_directives = {
     "language_level": 3, 
@@ -27,4 +36,4 @@ extensions = [
     Extension("quality", ["quality.pyx"], extra_compile_args=compile_args),
 ]
               
-setup(ext_modules=cythonize(extensions, compiler_directives=compiler_directives))
+setup(ext_modules=cythonize(extensions, compiler_directives=compiler_directives), script_args=['build_ext'], options={'build_ext':{'inplace':True}})
