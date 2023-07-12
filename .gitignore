@@ -10,5 +10,6 @@ helper.ipynb
 update.ipynb
 helper.py
 test.pyx
+h_demo.ipynb
 h_*.py
 h_*.ipynb

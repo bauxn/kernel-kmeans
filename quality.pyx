@@ -6,6 +6,23 @@ cdef extern from "float.h":
 
 
 def calc_silhouettes(double[:, ::1] distances, long[::1] labels):
+    '''
+    calculates the silhouette of each datapoint
+
+    For more details see KKMeans class docstring
+
+    Parameters
+    ----------
+    distances: ndarray of shape(n_samples, n_clusters), dtype=np.double
+        distances (or any measurement on a ratio scale) from each sample
+        to each center
+    labels: ndarray of shape(n_samples)
+    
+    Returns
+    -------
+    silhouettes: ndarray of shape(n_samples)
+        the silhouette of each sample
+    '''
     cdef:
         Py_ssize_t data_size = distances.shape[0]
         Py_ssize_t n_clusters = distances.shape[1]

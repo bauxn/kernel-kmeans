@@ -1,7 +1,4 @@
-from setuptools.extension import Extension
 from setuptools import setup, Extension
-# from distutils.core import setup
-# from distutils.extension import Extension
 from Cython.Build import cythonize
 from distutils.ccompiler import new_compiler  # used to determine command line argument for openmMP 
 from argparse import ArgumentParser
@@ -18,6 +15,7 @@ parser.add_argument("-C", "--cargs", nargs="*", required=False)
 args = parser.parse_args()
 
 if args.cargs is not None:
+    #TODO test if this happens when no args 
     compile_args = ["-DCYTHON_WITHOUT_ASSERTIONS"] + args.cargs
 
 
