@@ -36,7 +36,7 @@ def fill_empty_clusters(long[::1] labels, long n_clusters, return_sizes=True, rn
     if n_samples < n_clusters:
         raise ValueError("n_samples must be > n_clusters")
 
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(rng)
 
     while True:
         cluster_sizes = np.asarray(calc_sizes(labels, n_clusters), dtype=np.int_)

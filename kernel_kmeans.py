@@ -409,7 +409,7 @@ class KKMeans():
         # quality does not change.
         quality = np.NINF
         for it in range(self.max_iter):
-            labels, cluster_sizes = fill_empty_clusters(labels, self.n_clusters)
+            labels, cluster_sizes = fill_empty_clusters(labels, self.n_clusters, rng=self.rng)
             sq_distances = self._build_starting_distance(kernel_matrix)
             sq_distances, inner_sums, cluster_sizes = update_lloyd(
                 sq_distances, kernel_matrix, labels, 
@@ -577,7 +577,7 @@ class KKMeans():
         center_dists = np.zeros((kernel_matrix.shape[0], self.n_clusters))
         quality = 0
         for it in range(self.max_iter):
-            labels, sizes = fill_empty_clusters(labels, self.n_clusters)
+            labels, sizes = fill_empty_clusters(labels, self.n_clusters, rng=self.rng)
             if it == 0:
                 l_bounds, inner_sums, sizes = start_elkan(
                     start_dists, kernel_matrix, labels, 

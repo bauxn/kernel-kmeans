@@ -1,5 +1,6 @@
 import numpy as np
 from lloyd import update_lloyd
+from utils import fill_empty_clusters
 import pytest
 from tests.pytest_utils import (
     ctrl_centers_linear, RNG, build_starting_distance,
@@ -21,12 +22,14 @@ def test_correctness(data_max, n_samples, n_features, n_clusters):
         pytest.xfail("create labels does not expect more cluster than samples")
     data = RNG.random((n_samples, n_features)) * data_max
     labels = RNG.integers(low=0, high=n_clusters, size=(n_samples), dtype=np.int_)
+    labels, sizes = fill_empty_clusters(labels, n_clusters, rng=RNG)
     km = pairwise_kernels(data, metric="linear")
     centers = ctrl_centers_linear(data, labels, n_clusters, n_features)
     sq_dists_c = euclidean_distances(data, centers) ** 2
     sq_dists_t = build_starting_distance(km, n_clusters)
+    
     sq_dists_t, inner_sums_t, sizes_t = update_lloyd(
-        sq_dists_t, km, labels, n_clusters
+        sq_dists_t, km, labels, n_clusters, sizes
     )
     inner_sums_c = ctrl_inner_sums(km, labels, n_clusters)
     sizes_c = ctrl_cluster_sizes(labels, n_clusters)           

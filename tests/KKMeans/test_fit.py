@@ -64,11 +64,12 @@ def test_with_good_centers_low_nclusters(n_samples, n_features, n_clusters, seed
     assert np.all(kmeans.labels_ == kkmeans.labels_)
     assert np.isclose(kmeans.inertia_, kkmeans.quality_)
 
-def dummy_kmeans(data,centers, n_clusters, n_features, max_iter):
+def dummy_kmeans(data,centers, n_clusters, n_features, max_iter, seed):
+    gen = np.random.default_rng(seed)
     for _ in range(max_iter):
         dists = pairwise_distances(data, centers)
         labels = np.asarray(np.argmin(dists, axis=1),dtype=np.int_)
-        labels, _ = fill_empty_clusters(labels, n_clusters)
+        labels, _ = fill_empty_clusters(labels, n_clusters, rng=gen)
         centers = ctrl_centers_linear(data, labels, n_clusters, n_features)
     
     return labels
@@ -88,7 +89,7 @@ def test_with_centers_empty_clusters(n_samples, n_features, n_clusters, seed, al
     data, _, centers= make_blobs(
         n_samples, n_features, centers=n_clusters,
         random_state=seed, return_centers=True) 
-    labels_c = dummy_kmeans(data, centers, n_clusters, n_features, 100)
+    labels_c = dummy_kmeans(data, centers, n_clusters, n_features, 100, seed)
     kkmeans = KKMeans(n_clusters, n_init=1, init=centers, rng=seed, algorithm=alg, tol=0, max_iter=100)
     kkmeans.fit(data)
     assert np.all(labels_c == kkmeans.labels_)
