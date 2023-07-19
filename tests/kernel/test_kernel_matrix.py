@@ -1,62 +1,102 @@
 import pytest
 import numpy as np
 from kernels import build_kernel_matrix as km
-from sklearn.metrics.pairwise import pairwise_kernels as pk
+from sklearn.metrics.pairwise import pairwise_kernels as ctrl
+from tests.pytest_utils import RNG
 
-seed = 0
-rng = np.random.default_rng(seed)
 
-################# TEST DEFAULT PARAMS ###############
-@pytest.mark.parametrize("x_shape", [(20,10), (10,20), (10,10)])
-@pytest.mark.parametrize("variance", [0.5])
-@pytest.mark.parametrize("c", [2])
-@pytest.mark.parametrize("d", [4])
-@pytest.mark.parametrize("theta", [1])
-def test_Y_is_None(x_shape, variance, c, d, theta):
-    X = rng.random(size=x_shape)
-    assert(np.allclose(km(X), pk(X)))
-    assert(np.allclose(km(X, kernel="rbf"), pk(X, metric="rbf")))
-    assert(np.allclose(km(X, kernel="sigmoid"), pk(X, metric="sigmoid", gamma=1)))
-    assert(np.allclose(km(X, kernel="polynomial"), pk(X, metric="polynomial", gamma=1)))
+@pytest.mark.parametrize("max_data", [1, 1000])
+@pytest.mark.parametrize("x_size", [1, 101])
+@pytest.mark.parametrize("y_size", [1, 101])
+@pytest.mark.parametrize("dim", [1, 20])
+@pytest.mark.parametrize("c_0", [0])
+@pytest.mark.parametrize("d", [3])
+@pytest.mark.parametrize("gamma", [1])
+def test_def_params(max_data, x_size, y_size, dim, c_0, d, gamma):
+    X = RNG.random((x_size, dim)) * max_data
+    Y = RNG.random((y_size, dim)) * max_data
+    assert np.allclose(
+        km(X, Y, "linear"),
+        ctrl(X, Y, "linear"))
+    assert np.allclose(
+        km(X, Y, "rbf"),
+        ctrl(X, Y, "rbf", gamma=gamma))
+    assert np.allclose(
+        km(X, Y, "polynomial"),
+        ctrl(X, Y, "poly", gamma=gamma, coef0=c_0, degree=d))
+    assert np.allclose(
+        km(X, Y, "sigmoid"),
+        ctrl(X, Y, "sigmoid", gamma=gamma, coef0=c_0))
+    assert np.allclose(
+        km(X, Y, "laplacian"),
+        ctrl(X, Y, "laplacian", gamma=gamma))
 
-    assert(np.allclose(km(X, kernel="rbf", variance=variance), pk(X, metric="rbf", gamma=1/variance**2)))
-    assert(np.allclose(km(X, kernel="sigmoid", c=c, theta=theta), pk(X, metric="sigmoid", gamma=c, coef0=theta)))
-    assert(np.allclose(km(X, kernel="polynomial", c=c, d=d), pk(X, metric="polynomial", gamma=1, degree=d, coef0=c)))
+@pytest.mark.parametrize("max_data", [1, 1000])
+@pytest.mark.parametrize("x_size", [1, 101])
+@pytest.mark.parametrize("dim", [1, 20])
+@pytest.mark.parametrize("c_0", [7])
+@pytest.mark.parametrize("d", [5])
+@pytest.mark.parametrize("gamma", [0.1])
+def test_Y_is_None(max_data, x_size, dim, c_0, d, gamma):
+    X = RNG.random((x_size, dim)) * max_data
+    Y = None
+    assert np.allclose(
+        km(X, Y, "linear"),
+        ctrl(X, Y, "linear"))
+    assert np.allclose(
+        km(X, Y, "rbf", gamma=gamma),
+        ctrl(X, Y, "rbf", gamma=gamma))
+    assert np.allclose(
+        km(X, Y, "polynomial", gamma=gamma, c_0=c_0, d=d),
+        ctrl(X, Y, "polynomial", gamma=gamma, coef0=c_0, degree=d))
+    assert np.allclose(
+        km(X, Y, "sigmoid", gamma=gamma, c_0=c_0),
+        ctrl(X, Y, "sigmoid", gamma=gamma, coef0=c_0))
+    assert np.allclose(
+        km(X, Y, "laplacian", gamma=gamma),
+        ctrl(X, Y, "laplacian", gamma=gamma))
 
-################# TEST CONVERSION ##################
-def test_convert_float_1d():
-    X = rng.random(size=10)
-    Y = rng.random(size=10)
-    assert np.allclose(km(X), pk([X])) 
+@pytest.mark.parametrize("n_samples", [100])
+@pytest.mark.parametrize("gamma", [0.5])
+def test_1dfloat_to_2dfloat(n_samples, gamma):
+    '''
+    tests if 1d input is converted properly
+    
+    the utility of calculating the kernel of a single
+    input vector is not implemented in sklearn
+    '''
+    X = RNG.random(n_samples)
+    Y = RNG.random(n_samples)
+    assert np.allclose(km(X), ctrl([X])) 
     assert np.allclose(km(X), km([X]))
-    assert np.allclose(km(X, Y), pk([X], [Y]))
+    assert np.allclose(km(X, Y), ctrl([X], [Y]))
     assert np.allclose(km(X, Y), km([X], [Y]))
-    var = 0.5
-    assert np.allclose(km(X, kernel="rbf", variance = var), pk([X], metric="rbf", gamma = 1/(var**2)))
-    assert np.allclose(km(X, kernel="rbf", variance = var), km([X], kernel="rbf", variance=0.5))
-    assert np.allclose(km(X, Y, kernel="rbf", variance = var), pk([X], [Y], metric="rbf", gamma = 1/(var**2)))
-    assert np.allclose(km(X, Y, kernel="rbf", variance = var), km([X], [Y], kernel="rbf", variance=0.5))
+    assert np.allclose(
+        km(X, kernel="rbf", gamma=gamma), 
+        ctrl([X], metric="rbf", gamma=gamma))
+    assert np.allclose(
+        km(X, Y, kernel="rbf", gamma=gamma), 
+        ctrl([X], [Y], metric="rbf", gamma=gamma))
 
-def test_convert_integers_1d():
-    X = rng.integers(low=0, high=2000, size=10)
-    Y = rng.integers(low=0, high=2000, size=10)
-    assert np.allclose(km(X), pk([X])) 
-    assert np.allclose(km(X), km([X]))
-    assert np.allclose(km(X, Y), pk([X], [Y]))
-    assert np.allclose(km(X, Y), km([X], [Y]))
-    var = 0.5
-    assert np.allclose(km(X, kernel="rbf", variance = var), pk([X], metric="rbf", gamma = 1/(var**2)))
-    assert np.allclose(km(X, kernel="rbf", variance = var), km([X], kernel="rbf", variance=0.5))
-    assert np.allclose(km(X, Y, kernel="rbf", variance = var), pk([X], [Y], metric="rbf", gamma = 1/(var**2)))
-    assert np.allclose(km(X, Y, kernel="rbf", variance = var), km([X], [Y], kernel="rbf", variance=0.5))
 
-def test_convert_integers_2d():
-    X = rng.integers(low=0, high=2000, size=(10,20))
-    Y = rng.integers(low=0, high=2000, size=(10, 20))
-    assert np.allclose(km(X), pk(X)) 
-    assert np.allclose(km(X, Y), pk(X, Y))
-    assert np.allclose(km(X, kernel="rbf", variance = 0.5), pk(X, metric="rbf", gamma = 1/0.25))
-    assert np.allclose(km(X, Y, kernel="rbf", variance = 0.5), pk(X, Y, metric="rbf", gamma = 1/0.25))
+@pytest.mark.parametrize("n_samples", [100])
+@pytest.mark.parametrize("max_data", [1000])
+@pytest.mark.parametrize("dim", [10])
+@pytest.mark.parametrize("gamma", [0.5])
+def test_int_to_float(n_samples, max_data, dim, gamma):
+    '''tests if cython converts int properly'''
+    X = RNG.integers(max_data, size=(n_samples, dim))
+    Y = RNG.integers(max_data, size=(n_samples, dim))
+    assert np.allclose(km(X), ctrl(X)) 
+    assert np.allclose(km(X), km(X))
+    assert np.allclose(km(X, Y), ctrl(X, Y))
+    assert np.allclose(km(X, Y), km(X, Y))
+    assert np.allclose(
+        km(X, kernel="rbf", gamma=gamma), 
+        ctrl(X, metric="rbf", gamma=gamma))
+    assert np.allclose(
+        km(X, Y, kernel="rbf", gamma=gamma), 
+        ctrl(X, Y, metric="rbf", gamma=gamma))
 
 
 ############## TEST REJECTION OF INVALID INPUT ##############
@@ -68,20 +108,20 @@ def test_reject_single_scalar(scalar):
 
 
 @pytest.mark.xfail(strict=True, raises=ValueError)
-@pytest.mark.parametrize("X", ["asdasd", "", ["asd", "cde", "asdads"], ["asd"], [[0., 1., 2., "asd"]], [0., 1., "asd"]])
+@pytest.mark.parametrize("X", [["asdasd"], "", ["asd", "cde", "asdads"], ["asd"], [[0., 1., 2., "asd"]], [0., 1., "asd"]])
 def test_reject_strings(X):
     km(X)
 
 @pytest.mark.xfail(strict=True, raises=ValueError)
-@pytest.mark.parametrize("dims", [(1,1,1), (1,1,0), (1,1,1,1)])
+@pytest.mark.parametrize("dims", [(1,1,1), (1,1,0), (1,1,1,1), (0,0,0)])
 def test_reject_too_high_dimension(dims):
-    X = rng.random(size=dims)
+    X = RNG.random(size=dims)
     km(X)
 
 @pytest.mark.xfail(strict=True, raises=ValueError)
-@pytest.mark.parametrize("dims", [(0,), (0), (0,1), (0,1,1), (1,0,1), (1,0,0), (1,1,0)])
+@pytest.mark.parametrize("dims", [(0,), (0), (0,1), (0,1,1), (1,0,1), (1,0,0), (1,1,0), (0, 0)])
 def test_reject_zero_dimension(dims):
-    X = rng.random(size=dims)
+    X = RNG.random(size=dims)
     km(X)
 
 @pytest.mark.xfail(strict=True)
@@ -91,36 +131,31 @@ def test_reject_empty_data_zero():
 @pytest.mark.xfail(strict=True, raises=NotImplementedError)
 @pytest.mark.parametrize("kernel", ["", "asdasd", 2, None])
 def test_check_invalid_kernel(kernel):
-    X = rng.random(size=(5, 5))
+    X = RNG.random(size=(5, 5))
     km(X, kernel=kernel)
 
-@pytest.mark.xfail(strict=True)
-def test_reject_zero_variance():
-    X = rng.random(size=(5,5))
-    km(X, kernel="rbf", variance=0)
-
-############ OTHER #############
-
-
-def test_sigmoid_zero_to_zeroth_power():
-    X = (-1,1)
-    Y = (1, -1)
-    km(X,Y, kernel="sigmoid", c=1, theta=0)
+@pytest.mark.xfail(strict=True, raises=ValueError)
+@pytest.mark.parametrize("variance", [0., 1e-10, 0])
+def test_reject_zero_variance(variance):
+    X = RNG.random(size=(5,5))
+    km(X, kernel="gaussian", variance=variance)
 
 
-@pytest.mark.parametrize("x_shape", [(20,10), (10,20), (10,10)])
-@pytest.mark.parametrize("variance", [0.5])
-@pytest.mark.parametrize("c", [2])
-@pytest.mark.parametrize("d", [4])
-@pytest.mark.parametrize("theta", [1])
-def test_X_is_nullmatrix(x_shape, variance, c, d, theta):
-    X = np.zeros(shape=x_shape)
-    assert(np.allclose(km(X), pk(X)))
-    assert(np.allclose(km(X, kernel="rbf"), pk(X, metric="rbf")))
-    assert(np.allclose(km(X, kernel="sigmoid"), pk(X, metric="sigmoid", gamma=1)))
-    assert(np.allclose(km(X, kernel="polynomial"), pk(X, metric="polynomial", gamma=1)))
 
-    assert(np.allclose(km(X, kernel="rbf", variance=variance), pk(X, metric="rbf", gamma=1/variance**2)))
-    assert(np.allclose(km(X, kernel="sigmoid", c=c, theta=theta), pk(X, metric="sigmoid", gamma=c, coef0=theta)))
-    assert(np.allclose(km(X, kernel="polynomial", c=c, d=d), pk(X, metric="polynomial", gamma=1, degree=d, coef0=c)))
+def test_polynomial_zero_to_zeroth_power():
+    X = [(0, 0)]
+    Y = [(0, 0)]
+    assert np.allclose(
+        km(X, Y, kernel="polynomial", c_0=0, gamma=0, d=0),
+        ctrl(X, Y, metric="poly", coef0=0, gamma=0, degree=0))
 
+
+@pytest.mark.parametrize("n_samples", [1, 1000])
+@pytest.mark.parametrize("dim", [1,100])
+@pytest.mark.parametrize("gamma", [1])
+def test_X_is_nullmatrix(n_samples, dim, gamma):
+    X = np.zeros((n_samples, dim))
+    assert np.allclose(km(X), ctrl(X))
+    assert np.allclose(
+        km(X, kernel="rbf", gamma=gamma), 
+        ctrl(X, metric="rbf", gamma=gamma))

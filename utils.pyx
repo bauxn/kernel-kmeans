@@ -31,8 +31,11 @@ def fill_empty_clusters(long[::1] labels, long n_clusters, return_sizes=True, rn
     '''
 
     cdef Py_ssize_t i, index
-    cdef long size = labels.size
+    cdef long n_samples = labels.size
     
+    if n_samples < n_clusters:
+        raise ValueError("n_samples must be > n_clusters")
+
     rng = np.random.default_rng(0)
 
     while True:
@@ -45,7 +48,7 @@ def fill_empty_clusters(long[::1] labels, long n_clusters, return_sizes=True, rn
         for i in range(amount_empty_clusters):
             #assign every empty cluster one element
             print("Warning! Empty cluster encountered, consider using different n_cluster. Random element assigned to emtpy cluster")
-            index = rng.integers(size)
+            index = rng.integers(n_samples)
             labels[index] = empty_cluster_indices[i]
     if return_sizes:
         return np.asarray(labels, dtype=np.int_), np.asarray(cluster_sizes, dtype=np.int_)
@@ -90,16 +93,16 @@ def calc_sq_distances(
     distances: ndarray of shape(n_pred_samples, n_clusters)
         sq distances of each sample to predict to each center
     '''
-    outer_sum_full = _calc_outer_sums(kernel_matrix, labels, n_clusters)
-    #see build_starting_distance in KKMeans for more details
-    sq_distances = np.tile(np.diag(kernel_matrix), (n_clusters, 1)).T
+    outer_sum_full = np.asarray(_calc_outer_sums(kernel_matrix, labels, n_clusters))
+    sq_distances = np.zeros((kernel_matrix.shape[0], n_clusters))
     for cluster in range(n_clusters):
         size = cluster_sizes[cluster]
         outer_sum = outer_sum_full[:, cluster]
+        print("single otuer:",outer_sum.shape)
         inner_sum = inner_sums[cluster]
-        sq_distances[:, cluster] += (-2 * outer_sum / size +
-                                 inner_sum / size**2)
-    return sq_distances
+        sq_distances[:, cluster] += (-2 * outer_sum / size 
+                                    + inner_sum / size**2)
+    return np.asarray(sq_distances)
 
 
 cpdef double[:, ::1] _calc_outer_sums(
@@ -116,9 +119,9 @@ cpdef double[:, ::1] _calc_outer_sums(
     cdef:
         Py_ssize_t rows = kernel_matrix.shape[0]
         Py_ssize_t cols = kernel_matrix.shape[1]
-        double[:, ::1] outer_sums = np.zeros((rows, n_clusters), dtype=np.float64)
+        double[:, ::1] outer_sums = np.zeros((rows, n_clusters), dtype=np.double)
         Py_ssize_t i,j
     for i in prange(rows, nogil=True):
         for j in range(cols):
             outer_sums[i, labels[j]] += kernel_matrix[i, j]    
-    return np.asarray(outer_sums)
+    return outer_sums

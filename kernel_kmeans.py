@@ -5,7 +5,6 @@ from kernels import build_kernel_matrix
 from quality import calc_silhouettes
 from elkan import update_elkan, start_elkan
 
-
 class KKMeans():
     '''
     Kernel K-Means Clustering.
@@ -81,7 +80,7 @@ class KKMeans():
         The original elkan (wiht pw cluster distances) is slower
         than lloyd's when utilizing a kernel matrix.
 
-    kernel: {"linear", "rbf", "polynomial", "sigmoid", "gaussian"}, default="linear"
+    kernel: {"linear", "rbf", "polynomial", "sigmoid", "gaussian", "laplacian"}, default="linear"
         Which kernel shall be used to compute the kernel matrix.
         Gaussian is equal to rbf with gamma = variance**-2
         Linear calculates a regular kmeans clustering.
@@ -112,12 +111,6 @@ class KKMeans():
         Quality measured by the passed q_metric.
         If tol=0 only gets measured at the end of a "run".
 
-
-    Methods
-    -------
-    kernel_wrapper()
-
-    TODO
     '''
     def __init__(self, n_clusters=8, init="kmeans++", n_init=3,
                  max_iter=300, tol=1e-4, q_metric="inertia", verbose=False,
@@ -127,6 +120,8 @@ class KKMeans():
         Calls validation function after initializing the class parameters,
         which can raise exceptions.
         
+        Parameters:
+        ----------
         n_clusters: int, default=8
         init: {"kmeans++", "random", "truerandom"}, default = "kmeans++"
         n_init: int, default=3
@@ -136,7 +131,7 @@ class KKMeans():
         verbose: bool, default=True
         rng: int, default=None
         algorithm: {"lloyd", "elkan"}, default="elkan"
-        kernel: {"linear", "rbf", "polynomial", "sigmoid", "gaussian"}, default="linear"
+        kernel: {"linear", "rbf", "polynomial", "sigmoid", "gaussian", "laplacian"}, default="linear"
 
         '''
         self.n_clusters = n_clusters
@@ -145,7 +140,7 @@ class KKMeans():
         self.max_iter = max_iter
         self.tol = tol
         self.q_metric = q_metric
-        self.verbose = verbose
+        self.verbose = bool(verbose)
         self.rng = np.random.default_rng(rng)
         self.algorithm = algorithm
         self.kernel = kernel
@@ -161,20 +156,67 @@ class KKMeans():
         self.X_ = None
         self.quality_ = None
     
+
     def _validate_params(self):
         '''Checks for possible errors in the parameters, can raise exceptions'''
+        self.__validate_n_clusters()
+        self.__validate_init()
+        self.__validate_n_init()
+        self.__validate_max_iter()
+        self.__validate_tol()
+        self.__validate_q_metric()
+        self.__validate_algorithm()
+        self.__validate_kernel()
         if self.algorithm == "elkan" and self.q_metric == "silhouette":
             print("WARNING: using silhouette with elkan will most likely be inaccurate\
                   as elkan does not calculate exact distances to every center")
+
+    def __validate_n_clusters(self):
+        if not isinstance(self.n_clusters, int):
+            raise ValueError("n_clusters must be int")
+        if self.n_clusters < 1:
+            raise ValueError("n_cluster must be >= 1")
+    
+    def __validate_init(self):
+        if hasattr(self.init, "__iter__") and not isinstance(self.init, str):
+            return 
+        elif self.init not in ("kmeans++", "random", "truerandom") :
+            raise NotImplementedError("Initialisation method not implemented")
+    
+    def __validate_n_init(self):
+        if not isinstance(self.n_init, int):
+            raise ValueError("n_init must be int")
         if self.n_init <= 0:
-            raise ValueError("n_inits needs to be at least 1")
+            raise ValueError("n_inits must be => 1")
+    
+    def __validate_max_iter(self):
+        if not isinstance(self.max_iter, int):
+            raise ValueError("max_iter must be int")
+        if self.max_iter <= 0:
+            raise ValueError("max_iter must be => 1")
+        
+    def __validate_algorithm(self):
         if self.algorithm not in ("lloyd", "elkan"):
             raise NotImplementedError(str(self.algorithm)+ " not implemented")
-        if self.init not in ("kmeans++", "random", "truerandom"):
-            raise NotImplementedError("Quality metric not implemented")
+    
+    def __validate_q_metric(self):
         if self.q_metric not in ("silhouette, inertia"):
             raise NotImplementedError("Quality metric not implemented")
+    
+    def __validate_tol(self):
+        if not isinstance(self.tol, (int, float)):
+            raise ValueError("tol must be numeric")
+        if self.tol < 0:
+            self.tol = 0
+            print("Warning! tol < 0 passed, tol set to 0")
 
+    def __validate_kernel(self):
+        if self.kernel not in [
+                "linear", "rbf", "polynomial", 
+                "sigmoid", "gaussian", "laplacian"]:
+            raise ValueError("Invalid kernel provided.")
+
+    
     def kernel_wrapper(self, X, Y=None):
         '''
         Wrapper function to compute kernel matrix
@@ -211,7 +253,7 @@ class KKMeans():
         X = self._validate_data(X)
         kernel_matrix = self.kernel_wrapper(X)
         
-        # Storage for each attribute to be safed per iteration
+        #Storage for each attribute to be safed per iteration
         labels_store = np.zeros((self.n_init, X.shape[0]), dtype=np.int_)
         quality_store = np.zeros(self.n_init, dtype=np.double)
         inner_sums_store = np.zeros((self.n_init, self.n_clusters), dtype=np.double)
@@ -247,9 +289,10 @@ class KKMeans():
         elif self.q_metric == "silhouette": # bigger is better
             return np.argmax(quality_store) 
         else:
-            raise NotImplementedError(str(self.q_metric) + 
-                                      " metric not implemented; \
-                                      this should have been caught in _check_params")
+            raise NotImplementedError(
+                str(self.q_metric) 
+                + " metric not implemented; \
+                this should have been caught in _validate_params")
 
     def _out_finish(self, best_init):
         '''output at the end of self.fit'''
@@ -290,8 +333,7 @@ class KKMeans():
     
     def _validate_centers(self, centers):
         '''checks for invalid centers, can raise exceptions.'''
-        if not isinstance(centers, np.ndarray):
-            raise ValueError("Given centers must be ndarray")   
+        centers = np.asarray(centers, dtype=np.double)
         if centers.ndim != 2:
             raise ValueError("Given centers need to be 2-d array")
         if 0 in centers.shape:
@@ -331,56 +373,6 @@ class KKMeans():
                                          + self.kernel_wrapper(centers[cluster]))
         return np.asarray(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
 
-    def kmeanspp(self, X, kernel_matrix):
-        '''
-        Computes heuristic to get good initial centers
-
-        If used externally, KKMeans instance has to be initialized
-        properly (kernel, kwargs, n_clusters)
-        Kmeans++:
-            1. choose first center at random
-            2. choose x as next center with probability of
-                the normalized squared distance to its next 
-                cluster center
-            3. repeat 2 until k centers are found.
-        Here, K(x,x) must not be omitted like in _assign_to_centers
-        as the probabilities get normalized over the whole dataset.
-        Returns labels and not centers as distances need to be computed 
-        here anyhow.
-
-        Parameters
-        ----------
-        X: ndarray of shape(n_samples, n_clusters)
-            data which should be assigned labels.
-            used to grab existing datapoints
-        kernel_matrx: ndarray of shape(n_samples, n_samples)
-            kernel matrix of X
-
-        Returns
-        -------
-        ndarray of shape(n_samples)
-            Labels for each datapoint
-        '''
-        #those will be square dists
-        dists_to_centers = self._build_starting_distance(kernel_matrix)
-        n_samples = X.shape[0]
-        for cluster in range(self.n_clusters):
-            if cluster == 0:
-                # choose first center randomly
-                index = self.rng.integers(low=0, high=n_samples)
-            else:
-                # careful, dists_to_centers not initialized with 0
-                max_dist_each = np.amin(dists_to_centers[:, :cluster + 1], axis=1)
-                probs = max_dist_each/max_dist_each.sum()
-                index = self.rng.choice(n_samples, size=1, p=probs)
-            center = X[index]
-            inner_sum = self.kernel_wrapper(center)
-            outer_sum = self.kernel_wrapper(X, center)
-            # reshape necessary as kernel_wrapper has 2dim array output
-            dists_to_centers[:, cluster] += (-2 * outer_sum + inner_sum).reshape(n_samples,)
-             
-        return np.asarray(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
-
     def lloyd(self, kernel_matrix, labels):
         '''
         Computes a run of lloyd's algorithm
@@ -413,24 +405,25 @@ class KKMeans():
                 size of each cluster
                 returned to ease prediction
         '''
-        # Init with value so that first iteration cannot converge because
+        # Init with -INF so that first iteration cannot converge because
         # quality does not change.
         quality = np.NINF
         for it in range(self.max_iter):
-            distances = self._build_starting_distance(kernel_matrix)
-            distances, inner_sums, cluster_sizes = update_lloyd(distances, kernel_matrix, 
+            sq_distances = self._build_starting_distance(kernel_matrix)
+            sq_distances, inner_sums, cluster_sizes = update_lloyd(sq_distances, kernel_matrix, 
                                                                 labels, self.n_clusters)
             labels_old = labels
-            labels = np.asarray(np.argmin(distances, axis=1), dtype=np.int_)
+            labels = np.asarray(np.argmin(sq_distances, axis=1), dtype=np.int_)
             
-            quality, converged = self._measure_iter(distances, labels, 
-                                                    labels_old, quality)
+            quality, converged = self._measure_iter(sq_distances, labels, labels_old, quality)
             self._out_verbose(it, quality, converged=converged)
             if converged:
                 break
         
         return labels, quality, inner_sums, cluster_sizes
     
+
+
     def _out_verbose(self, iter, quality, converged):
         '''Checks if self.verbose and prints accordingly'''
         if not self.verbose:
@@ -628,10 +621,60 @@ class KKMeans():
 
             labels_old = labels
             labels = np.array(np.argmin(l_bounds, axis=1), dtype=np.int_)
-            
             quality, converged = self._measure_iter(l_bounds, labels, labels_old, quality)
             self._out_verbose(it, quality, converged=converged)
             if converged:
                 break
 
         return labels, quality, inner_sums, sizes
+
+    def kmeanspp(self, X, kernel_matrix):
+        '''
+        Computes heuristic to get good initial centers
+
+        If used externally, KKMeans instance has to be initialized
+        properly (kernel, kwargs, n_clusters)
+        Kmeans++:
+            1. choose first center at random
+            2. choose x as next center with probability of
+                the normalized squared distance to its next 
+                cluster center
+            3. repeat 2 until k centers are found.
+        Here, K(x,x) must not be omitted like in _assign_to_centers
+        as the probabilities get normalized over the whole dataset.
+        Returns labels and not centers as distances need to be computed 
+        here anyhow.
+
+        Parameters
+        ----------
+        X: ndarray of shape(n_samples, n_clusters)
+            data which should be assigned labels.
+            used to grab existing datapoints
+        kernel_matrx: ndarray of shape(n_samples, n_samples)
+            kernel matrix of X
+
+        Returns
+        -------
+        ndarray of shape(n_samples)
+            Labels for each datapoint
+        '''
+        #those will be square dists
+        dists_to_centers = self._build_starting_distance(kernel_matrix)
+        n_samples = X.shape[0]
+        for cluster in range(self.n_clusters):
+            if cluster == 0:
+                # choose first center randomly
+                index = self.rng.integers(low=0, high=n_samples)
+            else:
+                # careful, dists_to_centers not initialized with 0
+                min_dist_each = np.amin(dists_to_centers[:, :cluster + 1], axis = 1) 
+                probs = min_dist_each/min_dist_each.sum()
+                index = self.rng.choice(n_samples, size=1, p=probs)
+            center = X[index]
+            inner_sum = self.kernel_wrapper(center)
+            outer_sum = self.kernel_wrapper(X, center)
+            # reshape necessary as kernel_wrapper has 2dim array output
+            dists_to_centers[:, cluster] += (-2 * outer_sum + inner_sum).reshape(n_samples,)
+            # eliminate flop errors
+            dists_to_centers[np.isclose(dists_to_centers, 0)] = 0
+        return np.asarray(np.argmin(dists_to_centers, axis=1), dtype=np.int_)

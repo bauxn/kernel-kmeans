@@ -24,14 +24,16 @@ def calc_silhouettes(double[:, ::1] distances, long[::1] labels):
         the silhouette of each sample
     '''
     cdef:
-        Py_ssize_t data_size = distances.shape[0]
+        Py_ssize_t n_samples = distances.shape[0]
         Py_ssize_t n_clusters = distances.shape[1]
-        double[::1] silhouettes = np.zeros(data_size)
+        double[::1] silhouettes = np.zeros(n_samples)
         Py_ssize_t i, j
         long labels_i
-        double a, b
+        double a, b, max_a_b
 
-    for i in prange(data_size, nogil=True):
+    if n_clusters <= 1:
+        raise ValueError("Must have at least two clusters for silhouette")
+    for i in prange(n_samples, nogil=True):
         labels_i = labels[i]
         a = distances[i, labels_i]
         b = DBL_MAX
@@ -39,7 +41,11 @@ def calc_silhouettes(double[:, ::1] distances, long[::1] labels):
             if j == labels_i:
                 continue
             b = min(distances[i, j], b)
-
+        max_a_b = max(a,b)
+        if max_a_b == 0:
+            # if max_a_b = 0, a == b == 0 as dists always positive 
+            silhouettes[i] = 0
+            continue
         silhouettes[i] = (b - a) / max(a,b) 
     
     return np.asarray(silhouettes) 

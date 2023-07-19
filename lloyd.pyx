@@ -15,7 +15,7 @@ def update_lloyd(
     
     Parameters
     ----------
-    sq_distances: ndarray of shape(n_samples, n_clusters), dtype=double
+    sq_distances: ndarray of shape(n_samples, n_clusters), dtype=np.double
         sq_distances[x, :] = K(x,x). Could be zeros but then inertia
         quality measure would not be exact.
     kernel_matrix: ndarray of shape(n_samples, n_samples), dtype=double
@@ -39,9 +39,10 @@ def update_lloyd(
     '''         
     cdef Py_ssize_t cluster # loop index
 
-    
+    sq_distances = np.asarray(sq_distances, dtype=np.double)
+
     labels, cluster_sizes = fill_empty_clusters(labels, n_clusters, return_sizes=True)
-    outer_sums, inner_sums = calc_sums_full(kernel_matrix, labels, n_clusters)
+    outer_sums, inner_sums = _calc_sums_full(kernel_matrix, labels, n_clusters)
     
     for cluster in range(n_clusters):
         size = cluster_sizes[cluster]
@@ -49,10 +50,10 @@ def update_lloyd(
         inner_sum = inner_sums[cluster] 
         sq_distances[:,  cluster] += (-2 * outer_sum / size 
                                      + inner_sum / size**2)
-    return sq_distances, inner_sums, cluster_sizes
+    return np.asarray(sq_distances), np.asarray(inner_sums), np.asarray(cluster_sizes)
 
 
-def calc_sums_full(double[:, ::1] kernel_matrix, long[::1] labels, long n_clusters):
+def _calc_sums_full(double[:, ::1] kernel_matrix, long[::1] labels, long n_clusters):
     '''
     Helper function for distance calculation.
 

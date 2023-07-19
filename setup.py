@@ -3,12 +3,17 @@ from Cython.Build import cythonize
 from distutils.ccompiler import new_compiler  # used to determine command line argument for openmMP 
 from argparse import ArgumentParser
 
-
+# gcc
 compile_args = ["-O3", "-ffast-math", "-DCYTHON_WITHOUT_ASSERTIONS", "-fopenmp"]
 
 ccompiler = new_compiler()
 if ccompiler.compiler_type == "msvc":
     compile_args = ["/O2", "-DCYTHON_WITHOUT_ASSERTIONS", "/openmp"]
+
+if ccompiler.compiler_type not in ("gcc", "g++", "msvc"):
+    print("unknown compiler used! Please provide compile args with\
+          -C or --cargs. At least option to enable openmp heavily \
+          recommended.")
 
 parser = ArgumentParser()
 parser.add_argument("-C", "--cargs", nargs="*", required=False)
@@ -16,7 +21,8 @@ args = parser.parse_args()
 
 if args.cargs is not None:
     #TODO test if this happens when no args 
-    compile_args = ["-DCYTHON_WITHOUT_ASSERTIONS"] + args.cargs
+    # print(args.cargs)
+    compile_args = args.cargs
 
 
 compiler_directives = {
