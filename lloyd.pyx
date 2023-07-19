@@ -6,7 +6,8 @@ def update_lloyd(
         sq_distances, 
         double[:, ::1] kernel_matrix,
         long[::1] labels, 
-        long n_clusters):
+        long n_clusters,
+        long[::1] cluster_sizes):
     '''
     Computes squared dists from points to centers in feature space
  
@@ -41,7 +42,7 @@ def update_lloyd(
 
     sq_distances = np.asarray(sq_distances, dtype=np.double)
 
-    labels, cluster_sizes = fill_empty_clusters(labels, n_clusters, return_sizes=True)
+    # labels, cluster_sizes = fill_empty_clusters(labels, n_clusters, return_sizes=True)
     outer_sums, inner_sums = _calc_sums_full(kernel_matrix, labels, n_clusters)
     
     for cluster in range(n_clusters):

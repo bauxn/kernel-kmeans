@@ -98,7 +98,6 @@ def calc_sq_distances(
     for cluster in range(n_clusters):
         size = cluster_sizes[cluster]
         outer_sum = outer_sum_full[:, cluster]
-        print("single otuer:",outer_sum.shape)
         inner_sum = inner_sums[cluster]
         sq_distances[:, cluster] += (-2 * outer_sum / size 
                                     + inner_sum / size**2)

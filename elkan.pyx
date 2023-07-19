@@ -3,10 +3,6 @@ from cython.parallel import prange
 from libc.math cimport sqrt 
 from utils import fill_empty_clusters
 
-'''
-for more details (on the mathematical helper functions especially) consult thesis TODO
-'''
-
 def update_elkan(
         double[:, ::1] kernel_matrix, 
         double[:, ::1] l_bounds, 
@@ -14,6 +10,7 @@ def update_elkan(
         long[::1] labels, 
         long[::1] labels_old, 
         long[::1] sizes, 
+        long[::1] sizes_old,
         double[::1] inner_sums,
         long n_clusters):
     '''
@@ -47,8 +44,8 @@ def update_elkan(
     center_dists: ndarray of shape(n_clusters, n_clusters)
         updated center_dists
     '''
-    sizes_old = sizes
-    labels, sizes = fill_empty_clusters(labels, n_clusters)
+
+
     inner_sums_old = inner_sums
     inner_sums_mixed, inner_sums = _calc_inner_sums_mixed(kernel_matrix, labels, labels_old, 
                                                           n_clusters, return_inner_new=True)
@@ -188,7 +185,8 @@ def start_elkan(
         sq_distances, 
         double[:, ::1] kernel_matrix,
         long[::1] labels, 
-        long n_clusters):
+        long n_clusters,
+        long[::1] cluster_sizes):
     '''
     Init function for elkan
 
@@ -218,7 +216,6 @@ def start_elkan(
 
     
     sq_distances = np.asarray(sq_distances, dtype=np.double)
-    labels, cluster_sizes = fill_empty_clusters(labels, n_clusters, return_sizes=True)
     outer_sums, inner_sums = _calc_sums_full(kernel_matrix, labels, n_clusters)
     
     for cluster in range(n_clusters):
