@@ -1,0 +1,34 @@
+runs: 20
+n_samples: 10000
+n_features: 10
+n_clusters: 50
+
+avg_cython:0.020314693450927734
+avg_bool:0.18148880004882811
+
+runs: 20
+n_samples: 10000
+n_features: 10
+n_clusters: 5
+
+avg_cython:0.03500133752822876
+avg_bool:0.29980441331863406
+
+runs: 20
+n_samples: 10000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.024990344047546388
+avg_bool:0.2467367172241211
+
+runs: 20
+n_samples: 10000
+n_features: 10
+n_clusters: 100
+
+avg_cython:0.014270365238189697
+avg_bool:0.16530590057373046
+
+
+

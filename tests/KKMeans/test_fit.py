@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.datasets import make_blobs
-from kernel_kmeans import KKMeans
+from KKMeans import KKMeans
 from tests.pytest_utils import ctrl_centers_linear
 from sklearn.metrics.pairwise import pairwise_distances
 from utils import fill_empty_clusters
@@ -15,7 +15,7 @@ from utils import fill_empty_clusters
 @pytest.mark.parametrize("alg", ["lloyd", "elkan"])
 def test_with_random_centers_low_nclusters(n_samples, n_features, n_clusters, seed, alg):
     '''
-    Tests with given centers (that are not 100% exact, see make_blobs)
+    Tests with random centers (that are not 100% exact, see make_blobs)
 
     IF FAILED, LOOK IF WARNING IN STDOUT!
     This test _might_ fail because KKMeans assigns random element to 

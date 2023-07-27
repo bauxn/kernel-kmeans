@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from kernel_kmeans import KKMeans
+from KKMeans import KKMeans
 from sklearn.datasets import make_blobs
 from sklearn.metrics.pairwise import pairwise_kernels
 

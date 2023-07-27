@@ -1,0 +1,60 @@
+kernel: linear
+n_samples: 10000
+n_features: 5
+
+avg_cython:0.15402040481567383
+avg_sklearn:0.4829066753387451
+
+kernel: linear
+n_samples: 10000
+n_features: 50
+
+avg_cython:0.318941068649292
+avg_sklearn:0.5843247890472412
+
+
+kernel: linear
+n_samples: 10000
+n_features: 100
+
+avg_cython:0.6077585458755493
+avg_sklearn:0.6261759996414185
+
+
+kernel: linear
+n_samples: 1000
+n_features: 5
+
+avg_cython:0.001100468635559082
+avg_sklearn:0.004999232292175293
+
+kernel: linear
+n_samples: 1000
+n_features: 50
+
+avg_cython:0.003800845146179199
+avg_sklearn:0.005218982696533203
+
+kernel: linear
+n_samples: 1000
+n_features: 100
+
+avg_cython:0.0068256139755249025
+avg_sklearn:0.005178689956665039
+
+
+
+kernel: rbf
+n_samples: 1000
+n_features: 5
+
+avg_cython:0.013311409950256347
+avg_sklearn:0.015686678886413574
+
+kernel: rbf
+n_samples: 1000
+n_features: 50
+
+avg_cython:0.10347862243652343
+avg_sklearn:0.015753889083862306
+

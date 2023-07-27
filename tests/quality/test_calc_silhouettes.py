@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from tests.pytest_utils import RNG, split_integer, create_labels
-from quality import calc_silhouettes
+from quality import calc_silhouettes, avg_silhouette
 
 # @pytest.mark.parametrize("n_samples", [10, 1000])
 # @pytest.mark.parametrize("n_clusters", [pytest.param(1, marks=pytest.mark.xfail(strict=True)), 2, 200])
@@ -18,6 +18,18 @@ from quality import calc_silhouettes
 #     dists[:, -1] = 0
 #     silhouettes = calc_silhouettes(dists, labels)
 #     assert np.allclose(silhouettes, (rand_b - rand_a) / rand_b)
+
+@pytest.mark.parametrize("n_samples", [10, 1000])
+@pytest.mark.parametrize("n_clusters", [pytest.param(1, marks=pytest.mark.xfail(strict=True)), 2, 200])
+def test_avg(n_samples, n_clusters):
+    dists = np.full((n_samples, n_clusters), np.inf)
+    labels = np.asarray([0] * n_samples)
+    dists[:, 0] = 0
+    dists[:, -1] = 0
+    silhouettes = calc_silhouettes(dists, labels)
+    avg_silh = avg_silhouette(dists, labels)
+    assert np.allclose(silhouettes, avg_silh)
+
 
 @pytest.mark.parametrize("n_samples", [10, 1000])
 @pytest.mark.parametrize("n_clusters", [pytest.param(1, marks=pytest.mark.xfail(strict=True)), 2, 200])

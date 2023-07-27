@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from sklearn.datasets import make_blobs, make_circles
-from kernel_kmeans import KKMeans
+from KKMeans import KKMeans
 
 @pytest.mark.parametrize("n_predicts", [1,100])
 @pytest.mark.parametrize("n_samples", [1, 10, 1000])

@@ -1,0 +1,255 @@
+n_samples: 1000
+n_features: 1
+n_clusters: 1
+
+avg elkan: 0.0024251699447631835
+avg lloyd: 0.0025989532470703123
+
+n_samples: 1000
+n_features: 1
+n_clusters: 20
+
+avg elkan: 0.023189473152160644
+avg lloyd: 0.02323472499847412
+
+n_samples: 1000
+n_features: 1
+n_clusters: 50
+
+avg elkan: 0.022406125068664552
+avg lloyd: 0.02375037670135498
+
+n_samples: 1000
+n_features: 50
+n_clusters: 1
+
+avg elkan: 0.005708742141723633
+avg lloyd: 0.005803108215332031
+
+n_samples: 1000
+n_features: 50
+n_clusters: 20
+
+avg elkan: 0.012432312965393067
+avg lloyd: 0.013322591781616211
+
+n_samples: 1000
+n_features: 50
+n_clusters: 50
+
+avg elkan: 0.02260584831237793
+avg lloyd: 0.0224057674407959
+
+n_samples: 10000
+n_features: 1
+n_clusters: 1
+
+avg elkan: 0.23093061447143554
+avg lloyd: 0.23519611358642578
+
+n_samples: 10000
+n_features: 1
+n_clusters: 20
+
+avg elkan: 6.351949906349182
+avg lloyd: 4.589025330543518
+
+n_samples: 10000
+n_features: 1
+n_clusters: 50
+
+avg elkan: 3.211361217498779
+avg lloyd: 2.775833082199097
+
+n_samples: 10000
+n_features: 50
+n_clusters: 1
+
+avg elkan: 0.35735743045806884
+avg lloyd: 0.36380882263183595
+
+n_samples: 10000
+n_features: 50
+n_clusters: 20
+
+avg elkan: 1.498030424118042
+avg lloyd: 1.2278843879699708
+
+n_samples: 10000
+n_features: 50
+n_clusters: 50
+
+avg elkan: 1.0526402711868286
+avg lloyd: 1.0216769933700562
+
+######################################
+n_samples: 2000
+n_features: 1
+n_clusters: 5
+
+avg elkan: 0.01746242046356201
+avg lloyd: 0.014798545837402343
+
+n_samples: 2000
+n_features: 1
+n_clusters: 50
+
+avg elkan: 0.0876744270324707
+avg lloyd: 0.10066020488739014
+
+n_samples: 2000
+n_features: 1
+n_clusters: 200
+
+avg elkan: 0.46122844219207765
+avg lloyd: 0.5283888816833496
+
+n_samples: 2000
+n_features: 50
+n_clusters: 5
+
+avg elkan: 0.02055516242980957
+avg lloyd: 0.021572518348693847
+
+n_samples: 2000
+n_features: 50
+n_clusters: 50
+
+avg elkan: 0.04932649135589599
+avg lloyd: 0.05127904415130615
+
+n_samples: 2000
+n_features: 50
+n_clusters: 200
+
+avg elkan: 0.454405689239502
+avg lloyd: 0.4585579872131348
+
+n_samples: 8000
+n_features: 1
+n_clusters: 5
+
+avg elkan: 3.262812089920044
+avg lloyd: 1.8339854240417481
+
+n_samples: 8000
+n_features: 1
+n_clusters: 50
+
+avg elkan: 1.6337976694107055
+avg lloyd: 1.4940980672836304
+
+n_samples: 8000
+n_features: 1
+n_clusters: 200
+
+avg elkan: 2.8079293251037596
+avg lloyd: 3.2231049060821535
+
+n_samples: 8000
+n_features: 50
+n_clusters: 5
+
+avg elkan: 0.2380284547805786
+avg lloyd: 0.24247777462005615
+
+n_samples: 8000
+n_features: 50
+n_clusters: 50
+
+avg elkan: 0.7266149044036865
+avg lloyd: 0.6713833332061767
+
+n_samples: 8000
+n_features: 50
+n_clusters: 200
+
+avg elkan: 2.7349704265594483
+avg lloyd: 2.8078362464904787
+
+########################################################
+
+n_samples: 2000
+n_features: 5
+n_clusters: 5
+
+avg elkan: 0.07898123264312744
+avg lloyd: 0.05291948318481445
+
+n_samples: 2000
+n_features: 5
+n_clusters: 50
+
+avg elkan: 0.05135579109191894
+avg lloyd: 0.051861119270324704
+
+n_samples: 2000
+n_features: 5
+n_clusters: 200
+
+avg elkan: 0.4639068603515625
+avg lloyd: 0.5030214071273804
+
+n_samples: 2000
+n_features: 50
+n_clusters: 5
+
+avg elkan: 0.023506784439086915
+avg lloyd: 0.022856879234313964
+
+n_samples: 2000
+n_features: 50
+n_clusters: 50
+
+avg elkan: 0.05081775188446045
+avg lloyd: 0.05438177585601807
+
+n_samples: 2000
+n_features: 50
+n_clusters: 200
+
+avg elkan: 0.46847450733184814
+avg lloyd: 0.47241458892822263
+
+n_samples: 8000
+n_features: 5
+n_clusters: 5
+
+avg elkan: 0.15928142070770263
+avg lloyd: 0.1575928211212158
+
+n_samples: 8000
+n_features: 5
+n_clusters: 50
+
+avg elkan: 0.9019352912902832
+avg lloyd: 0.8883497238159179
+
+n_samples: 8000
+n_features: 5
+n_clusters: 200
+
+avg elkan: 2.911167764663696
+avg lloyd: 3.4373395919799803
+
+n_samples: 8000
+n_features: 50
+n_clusters: 5
+
+avg elkan: 0.2842575550079346
+avg lloyd: 0.26070892810821533
+
+n_samples: 8000
+n_features: 50
+n_clusters: 50
+
+avg elkan: 0.7458501100540161
+avg lloyd: 0.7143506526947021
+
+n_samples: 8000
+n_features: 50
+n_clusters: 200
+
+avg elkan: 2.691657471656799
+avg lloyd: 2.6694527864456177
+

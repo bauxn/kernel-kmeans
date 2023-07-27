@@ -58,30 +58,6 @@ def _sanitize_data(X, Y):
     X, Y = _check_dimensionality(X, Y)
     return X, Y
 
-
-# def build_kernel_matrix(X, Y=None, kernel="linear", variance=None, c=1, d=3, theta=1):
-
-#     X, Y = _sanitize_data(X, Y)
-#     if variance is None:
-#         variance = np.sqrt(X.shape[1])
-#     if kernel == "linear":
-#         return np.asarray(linear_kernel(X, Y))
-#     elif kernel == "rbf":
-#         return np.asarray(rbf_kernel(X, Y, variance))
-#     elif kernel == "polynomial":
-#         return np.asarray(polynomial_kernel(X, Y, c, d))
-#     elif kernel == "sigmoid":
-#         return np.asarray(sigmoid_kernel(X, Y, c, theta))
-#     else:
-#         raise NotImplementedError(str(kernel) + " kernel not implemented")
-
-# def _sanitize_data(X, Y):
-#     if Y is None:
-#         Y = X
-#     X, Y = _cast_to_ndarray(X, Y)
-#     X, Y = _check_dimensions(X, Y)
-#     return X, Y
-
 def _check_dimensionality(X, Y):
     if len(X.shape) == 0 or len(Y.shape) == 0:
         raise ValueError("X and Y need to be 1-d or 2-d (arraylikes)")
@@ -203,4 +179,25 @@ cpdef laplacian_kernel(double[:, ::1] X, double[:, ::1] Y, double gamma):
             for k in range(dim):
                 one_norm = one_norm + fabs(X[i,k] - Y[j,k])
             matrix[i,j] = exp(-gamma * one_norm)
+    return matrix
+
+cpdef chi_squared_kernel(double[:, ::1] X, double [:, ::1] Y, double gamma):
+    '''K(x, y) == exp(-gamma * sum_i((x[i] - y[i])^2)/(x[i] + y[i]))'''
+    cdef:
+        Py_ssize_t x_size = X.shape[0]
+        Py_ssize_t y_size = Y.shape[0]
+        Py_ssize_t dim = X.shape[1]
+        Py_ssize_t i,j,k
+        double summand
+        double[:, ::1] matrix = np.zeros((x_size, y_size))
+
+    assert dim == Y.shape[1]
+
+    for i in prange(x_size, nogil=True):
+        for j in range(y_size):
+            summand = 0
+            for k in range(dim):
+                summand = summand + (X[i, k] - Y[j, k])**2 / (X[i, k] + Y[j, k])
+            matrix[i, j] = summand
+
     return matrix

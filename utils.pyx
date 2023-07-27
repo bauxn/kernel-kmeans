@@ -9,7 +9,7 @@ def fill_empty_clusters(long[::1] labels, long n_clusters, return_sizes=True, rn
     a random element is assigned to empty cluster.
     EG cluster 0 has size 0, labels[random_index] = 0.
     At the beginning a new rng-generator is created to ensure
-    predictable assignments. TODO mit doku!
+    predictable assignments. 
     As sizes must be calculated, can be used as alternative to
     calc_sizes
 
@@ -124,3 +124,23 @@ cpdef double[:, ::1] _calc_outer_sums(
         for j in range(cols):
             outer_sums[i, labels[j]] += kernel_matrix[i, j]    
     return outer_sums
+
+cpdef double[::1] _calc_inner_sums(
+        double[:, ::1] kernel_matrix, 
+        long[::1] labels, 
+        long n_clusters):
+    '''
+    just used for measurements
+    '''
+    cdef:
+        Py_ssize_t rows = kernel_matrix.shape[0]
+        Py_ssize_t cols = kernel_matrix.shape[1]
+        double[:, ::1] inner_sums = np.zeros(shape=(rows, n_clusters), dtype=np.double)
+        Py_ssize_t i,j
+        long labels_i
+    for i in prange(rows, nogil=True):
+        labels_i = labels[i]
+        for j in range(cols):
+            if labels[j] == labels_i:
+                inner_sums[i, labels_i] += kernel_matrix[i, j]    
+    return np.sum(inner_sums, axis=0)

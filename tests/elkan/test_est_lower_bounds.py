@@ -6,9 +6,10 @@ from tests.pytest_utils import (
     split_integer
 )
 from elkan import start_elkan, _est_lower_bounds
+from utils import calc_sizes
 
 @pytest.mark.parametrize("max_data", [1, 1000])
-@pytest.mark.parametrize("n_sampels", [1, 2000])
+@pytest.mark.parametrize("n_samples", [1, 2000])
 @pytest.mark.parametrize("n_clusters", [1, 20])
 @pytest.mark.parametrize("n_features", [1, 10])
 @pytest.mark.parametrize("kernel", ["linear", "rbf"])
@@ -31,13 +32,14 @@ def test_recalc(max_data, n_samples, n_clusters, n_features, kernel):
         pytest.xfail("create labels does not expect more cluster than samples")
     X = RNG.random((n_samples, n_features)) * max_data
     labels_0 = create_labels(split_integer(n_samples, n_samples // n_clusters))
-    labels_1 = create_labels(split_integer(n_samples, n_samples // n_clusters))
-    assert any(labels_0 != labels_1) # TODO remove
-    km = pairwise_kernels(X)
+    labels_1 = RNG.permutation(labels_0)
+    sizes_0 = calc_sizes(labels_0, n_clusters)
+    sizes_1 = calc_sizes(labels_1, n_clusters)
+    km = pairwise_kernels(X, metric=kernel) # TODO
     start_dists = build_starting_distance(km, n_clusters)
-    sq_dists, _, __ = start_elkan(start_dists, km, labels_0, n_clusters)
-    c_dists = np.asarray([[np.inf] * n_clusters] * n_clusters)
-    sq_dists_c, inner_sums, cl_sizes = start_elkan(start_dists, km, labels_1, n_clusters)
-    sq_dists_t = _est_lower_bounds(km, sq_dists, c_dists, labels_1, cl_sizes, inner_sums)
+    sq_dists, inner, __ = start_elkan(start_dists, km, labels_0, n_clusters, sizes_0)
+    c_dists = np.asarray([[np.inf] * n_clusters] * n_samples, dtype=np.double)
+    sq_dists_c, inner_sums, cl_sizes = start_elkan(start_dists, km, labels_1, n_clusters, sizes_1)
+    sq_dists_t = _est_lower_bounds(km, sq_dists, c_dists, labels_1, cl_sizes, inner)
     
     assert np.allclose(sq_dists_c, sq_dists_t)

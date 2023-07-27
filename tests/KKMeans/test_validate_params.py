@@ -1,4 +1,4 @@
-from kernel_kmeans import KKMeans
+from KKMeans import KKMeans
 import pytest
 
 @pytest.mark.xfail(strict=True)

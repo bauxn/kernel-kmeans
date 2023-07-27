@@ -2,8 +2,9 @@ import numpy as np
 from lloyd import update_lloyd
 from utils import calc_sq_distances, fill_empty_clusters
 from kernels import build_kernel_matrix
-from quality import calc_silhouettes
+from quality import avg_silhouette
 from elkan import update_elkan, start_elkan
+from matplotlib import pyplot as plt
 
 class KKMeans():
     '''
@@ -19,7 +20,7 @@ class KKMeans():
     n_clusters: int, default=8
         The number of clusters to form.
 
-    init: {kmeans++, random, truerandom} or arraylike, default = kmeans++
+    init: {kmeans++, random, truerandom} or arraylike of shape(n_clusters, n_features), default = kmeans++
         Initialization method. 
         kmeans++: heuristic to choose "good" starting centers
             For more, see: thesis or
@@ -27,8 +28,9 @@ class KKMeans():
             advantage of carefull seeding, 2007
         random: Randomly takes existing datapoints as centers
         truerandom: assigns random labels to each datapoint
-        
-        If arraylike is passed, its content are used as centers
+    
+        If arraylike is passed, init is cast to ndarray of
+        doubles and its content is used as centers.
 
     n_init: int, default=3 
         The number of clusterings computed. As KKMeans is 
@@ -38,7 +40,7 @@ class KKMeans():
     max_iter: int, default=300
         Maximal amount of iterations for each run.
     
-    tol: float, default = 0.0004
+    tol: float, default = 0.0001    
         Max difference of quality-metric between iterations
         to declare run for converged.
         If 0., run converges only when labels do not change
@@ -72,7 +74,7 @@ class KKMeans():
         When none, "fresh, unpredictable entropy will be pulled from the OS"
             - np random generator docpage.
     
-    algorithm: {"lloyd", "elkan"}, default=elkan
+    algorithm: {"lloyd", "elkan"}, default="lloyd"
         The algorithm which will be used for commputation.
         lloyd is the standard heuristic used to solve the k-means   
         problem. This is a simplified version of Elkan's algorithm
@@ -114,7 +116,7 @@ class KKMeans():
     '''
     def __init__(self, n_clusters=8, init="kmeans++", n_init=3,
                  max_iter=300, tol=1e-4, q_metric="inertia", verbose=False,
-                 rng=None, algorithm="elkan", kernel="linear", **kwargs):
+                 rng=None, algorithm="lloyd", kernel="linear", **kwargs):
         '''
         Ctor for KKMeans, more details in class docstring. 
         Calls validation function after initializing the class parameters,
@@ -126,11 +128,11 @@ class KKMeans():
         init: {"kmeans++", "random", "truerandom"}, default = "kmeans++"
         n_init: int, default=3
         max_iter: int, default=300
-        tol: float, default=0.0004
+        tol: float, default=0.0001
         q_metric: {inertia, silhouette}, default="inertia"
         verbose: bool, default=True
         rng: int, default=None
-        algorithm: {"lloyd", "elkan"}, default="elkan"
+        algorithm: {"lloyd", "elkan"}, default="lloyd"
         kernel: {"linear", "rbf", "polynomial", "sigmoid", "gaussian", "laplacian"}, default="linear"
 
         '''
@@ -179,10 +181,21 @@ class KKMeans():
     
     def __validate_init(self):
         if hasattr(self.init, "__iter__") and not isinstance(self.init, str):
-            return 
+            self.__validate_centers() 
         elif self.init not in ("kmeans++", "random", "truerandom") :
             raise NotImplementedError("Initialisation method not implemented")
     
+    def __validate_centers(self):
+        '''checks for invalid centers, can raise exceptions.'''
+        self.init = np.asarray(self.init, dtype=np.double)
+        if self.init.ndim != 2:
+            raise ValueError("Given centers need to be 2-d array")
+        if 0 in self.init.shape:
+            raise ValueError("Given centers are empty")
+        if self.init.shape[0] != self.n_clusters:
+            raise ValueError("Amount of given centers must be equal to n_clusters")
+        return self.init
+
     def __validate_n_init(self):
         if not isinstance(self.n_init, int):
             raise ValueError("n_init must be int")
@@ -215,6 +228,7 @@ class KKMeans():
                 "linear", "rbf", "polynomial", 
                 "gaussian", "laplacian"]:
             raise ValueError("Invalid kernel provided.")
+    
 
     
     def kernel_wrapper(self, X, Y=None):
@@ -301,7 +315,6 @@ class KKMeans():
 
     def _validate_data(self, X):
         """checks for invalidate data, can raise exceptions."""
-        X = np.asarray(X, dtype=np.double)
         if len(X.shape) != 2:
             raise ValueError("X needs to be 2-d Array")
         if 0 in X.shape:
@@ -314,9 +327,8 @@ class KKMeans():
         '''Assign labels to each datapoint by given method'''
 
         # hasattr(x, __iter__) to check if object may be arraylike 
-        if hasattr(self.init, "__iter__") and not isinstance(self.init, str): 
-            centers = np.asarray(self.init, dtype=np.double)
-            self.init = self._validate_centers(centers) 
+        # if hasattr(self.init, "__iter__") and not isinstance(self.init, str): 
+        if isinstance(self.init, np.ndarray) and self.init.dtype == np.double:
             return self._assign_to_centers(X, self.init)
         
         elif self.init == "random":
@@ -330,17 +342,6 @@ class KKMeans():
             return self.kmeanspp(X, kernel_matrix)
         
         raise NotImplementedError("Unknown initialisation method")
-    
-    def _validate_centers(self, centers):
-        '''checks for invalid centers, can raise exceptions.'''
-        centers = np.asarray(centers, dtype=np.double)
-        if centers.ndim != 2:
-            raise ValueError("Given centers need to be 2-d array")
-        if 0 in centers.shape:
-            raise ValueError("Given centers are empty")
-        if centers.shape[0] != self.n_clusters:
-            raise ValueError("Amount of given centers must be equal to n_clusters")
-        return centers
         
     def _assign_to_centers(self, X, centers):
         '''
@@ -526,8 +527,7 @@ class KKMeans():
         -------
         Average silhouette of each datapoint
         '''
-        silhouettes = calc_silhouettes(sq_distances, labels)
-        return sum(silhouettes) / len(silhouettes)
+        return avg_silhouette(sq_distances, labels)
     
     def _build_starting_distance(self, kernel_matrix):
         '''
@@ -613,6 +613,8 @@ class KKMeans():
         as the probabilities get normalized over the whole dataset.
         Returns labels and not centers as distances need to be computed 
         here anyhow.
+        As the center are explicitely given, the distance calculations here
+        are simpler.
 
         Parameters
         ----------
@@ -648,6 +650,7 @@ class KKMeans():
             dists_to_centers[np.isclose(dists_to_centers, 0)] = 0
         return np.asarray(np.argmin(dists_to_centers, axis=1), dtype=np.int_)
 
+
     def predict(self, X):
         '''
         Computes the closest cluster center for each x in X
@@ -681,3 +684,16 @@ class KKMeans():
             self.n_clusters)
         return np.argmin(sq_distances, axis=1)
 
+
+
+def visualize_kkm(data, labels):
+    if len(data[0]) > 3:
+        raise Exception("Dimensionality is too high for visualization")
+    elif len(data[0]) == 1:
+        plt.scatter(data, [0 for x in range(len(data))], c = labels)
+    elif len(data[0]) == 2:
+        plt.scatter(data[:,0], data[:,1], c = labels)
+    elif len(data[0]) == 3:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection = "3d")
+        ax.scatter(data[:,0], data[:,1], data[:,2], c = labels)

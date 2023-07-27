@@ -1,0 +1,232 @@
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 100
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.0
+avg_bool:0.0014348030090332031runs: 3
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 300
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.0
+avg_bool:0.0010005633036295574runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 1000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.0034041404724121094
+avg_bool:0.008008599281311035
+
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 3000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.07869765758514405
+avg_bool:0.22811832427978515
+
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 3000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.07805070877075196
+avg_bool:0.22848803997039796
+
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 5000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.25874149799346924
+avg_bool:0.7807876825332641
+
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 3000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.08121967315673828
+avg_bool:0.23039700984954833
+
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 3000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.07983670234680176
+avg_bool:0.22983322143554688
+
+
+
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 3000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.07907445430755615
+avg_bool:0.2290107250213623
+
+
+#########################################################################
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 3000
+n_features: 10
+n_clusters: 5
+
+avg_cython:0.004266548156738281
+avg_bool:0.08556160926818848
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 5000
+n_features: 10
+n_clusters: 5
+
+avg_cython:0.01078202724456787
+avg_bool:0.23364027738571166
+
+
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 10000
+n_features: 10
+n_clusters: 5
+
+avg_cython:0.03975038528442383
+avg_bool:1.0340473532676697
+
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 3000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.08130874633789062
+avg_bool:0.1577211856842041
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 5000
+n_features: 10
+n_clusters: 10
+
+avg_cython:0.2579355835914612
+avg_bool:0.5097829937934876
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 10000
+n_features: 10
+n_clusters: 10
+
+avg_cython:1.6930334091186523
+avg_bool:3.0694741725921633
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 3000
+n_features: 10
+n_clusters: 50
+
+avg_cython:0.03783988952636719
+avg_bool:0.13060603141784669
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 5000
+n_features: 10
+n_clusters: 50
+
+avg_cython:0.10879367589950562
+avg_bool:0.34960442781448364
+
+runs: 20
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 8000
+n_features: 10
+n_clusters: 50
+
+avg_cython:0.4422966122627258
+avg_bool:1.464211392402649
+
+for 10000 and 50:
+    avg cython consistently ~1,6s
+    avg_bool (presumably ram problems), fastest time was 44s, usually did not finish below 2 min
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 10000
+n_features: 10
+n_clusters: 50
+
+avg_cython:0.6814655303955078
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 5000
+n_features: 10
+n_clusters: 50
+
+avg_cython:0.11030340194702148
+runs: 10
+max_iter: 300
+tol: 0
+rng: 0
+n_samples: 5000
+n_features: 10
+n_clusters: 50
+
+avg_bool:0.4152131319046021
+
