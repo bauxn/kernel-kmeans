@@ -1,8 +1,6 @@
 import numpy as np
 from cython.parallel import prange
 from libc.math cimport sqrt 
-from utils import fill_empty_clusters
-
 def update_elkan(
         double[:, ::1] kernel_matrix, 
         double[:, ::1] l_bounds, 

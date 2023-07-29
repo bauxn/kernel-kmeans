@@ -1,6 +1,5 @@
 import numpy as np
 from cython.parallel import prange
-from utils import fill_empty_clusters
 
 def update_lloyd(
         sq_distances, 

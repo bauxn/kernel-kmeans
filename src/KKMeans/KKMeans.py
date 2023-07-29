@@ -1,9 +1,9 @@
 import numpy as np
-from lloyd import update_lloyd
-from utils import calc_sq_distances, fill_empty_clusters
-from kernels import build_kernel_matrix
-from quality import avg_silhouette
-from elkan import update_elkan, start_elkan
+from KKMeans.lloyd import update_lloyd
+from KKMeans.utils import calc_sq_distances, fill_empty_clusters
+from KKMeans.kernels import build_kernel_matrix
+from KKMeans.quality import avg_silhouette
+from KKMeans.elkan import update_elkan, start_elkan
 from matplotlib import pyplot as plt
 
 class KKMeans():
