@@ -16,7 +16,8 @@ from Cython.Build import cythonize
 #           -C or --cargs. At least option to enable openmp heavily \
 #           recommended.")
 
-compile_args = ["-DCYTHON_WITHOUT_ASSERTIONS"]
+# compile_args = ["-DCYTHON_WITHOUT_ASSERTIONS"]
+compile_args = ["/O2", "-DCYTHON_WITHOUT_ASSERTIONS", "/openmp"]
 
 compiler_directives = {
     "language_level": 3, 

@@ -1,0 +1,16 @@
+-openmp
+n_samples: 5000
+time: 0.25276984214782716
+
+->no
+n_samples: 5000
+time: 0.327085497379303
+
+->no
+n_samples: 8000
+time: 0.9038164019584656
+
+->openmp
+n_samples: 8000
+time: 0.7760456681251526
+
