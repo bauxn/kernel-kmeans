@@ -27,5 +27,10 @@ extensions = [
     Extension("KKMeans", ["src/KKMeans/KKMeans.py"])
 ]
 
-              
-setup(ext_modules=cythonize(extensions, compiler_directives=compiler_directives))
+# This is used for building the distribution for pipy
+# https://stackoverflow.com/questions/73766918/creating-python-package-which-uses-cython-valueerror
+package_data = {
+    "KKMeans" : ["utils.pyx", "lloyd.pyx", "elkan.pyx", "kernels.pyx", "quality.pyx", "KKMeans.py"]
+}
+        
+setup(ext_modules=cythonize(extensions, compiler_directives=compiler_directives),package_dir={"KKMeans":"src/KKMeans"}, package_data=package_data, include_package_data=True)
