@@ -32,5 +32,13 @@ extensions = [
 package_data = {
     "KKMeans" : ["utils.pyx", "lloyd.pyx", "elkan.pyx", "kernels.pyx", "quality.pyx", "KKMeans.py"]
 }
-        
-setup(ext_modules=cythonize(extensions, compiler_directives=compiler_directives),package_dir={"KKMeans":"src/KKMeans"}, package_data=package_data, include_package_data=True)
+
+# variables set here (except ext_modules) and not in Pyproject.toml as setuptool-specifics is still in beta
+# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+setup(
+    name="KKMeans",
+    ext_modules=cythonize(extensions, compiler_directives=compiler_directives),
+    package_dir={"KKMeans":"src/KKMeans"}, 
+    package_data=package_data, 
+    include_package_data=True
+)
