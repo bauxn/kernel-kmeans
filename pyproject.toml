@@ -3,7 +3,7 @@ requires = ["setuptools>=63", "wheel", "Cython"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "KKMeans"
-version = "0.0.5"
+version = "0.0.6"
 authors = [
   { name="Paul Theis", email="keymailt7@gmail.com" },
 ]

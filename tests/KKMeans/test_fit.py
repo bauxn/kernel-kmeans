@@ -5,7 +5,7 @@ from sklearn.datasets import make_blobs
 from KKMeans import KKMeans
 from tests.pytest_utils import ctrl_centers_linear
 from sklearn.metrics.pairwise import pairwise_distances
-from utils import fill_empty_clusters
+from KKMeans.utils import fill_empty_clusters
 
 
 @pytest.mark.parametrize("n_samples", [3000])

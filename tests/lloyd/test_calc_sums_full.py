@@ -3,7 +3,7 @@ import pytest
 from tests.pytest_utils import create_labels, RNG, split_integer
 from sklearn.metrics.pairwise import pairwise_kernels
 from tests.pytest_utils import ctrl_inner_sums, ctrl_outer_sums
-from lloyd import _calc_sums_full
+from KKMeans.lloyd import _calc_sums_full
 
 
 @pytest.mark.parametrize("n_samples", [10,1000])

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from sklearn.metrics.pairwise import pairwise_kernels 
-from utils import _calc_outer_sums
+from KKMeans.utils import _calc_outer_sums
 from tests.pytest_utils import (
     ctrl_outer_sums, RNG,
     split_integer, create_labels

@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from utils import fill_empty_clusters
+from KKMeans.utils import fill_empty_clusters
 from tests.pytest_utils import split_integer, create_labels, ctrl_cluster_sizes
 
 

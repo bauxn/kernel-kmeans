@@ -5,8 +5,8 @@ from tests.pytest_utils import (
     RNG, build_starting_distance, create_labels,
     split_integer
 )
-from elkan import start_elkan, _est_lower_bounds
-from utils import calc_sizes
+from KKMeans.elkan import start_elkan, _est_lower_bounds
+from KKMeans.utils import calc_sizes
 
 @pytest.mark.parametrize("max_data", [1, 1000])
 @pytest.mark.parametrize("n_samples", [1, 2000])

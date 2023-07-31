@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from tests.pytest_utils import RNG, split_integer, create_labels
-from quality import calc_silhouettes, avg_silhouette
+from KKMeans.quality import calc_silhouettes, avg_silhouette
 
 # @pytest.mark.parametrize("n_samples", [10, 1000])
 # @pytest.mark.parametrize("n_clusters", [pytest.param(1, marks=pytest.mark.xfail(strict=True)), 2, 200])

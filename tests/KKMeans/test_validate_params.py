@@ -44,4 +44,4 @@ def test_algorithm(param):
 @pytest.mark.xfail(strict=True)
 @pytest.mark.parametrize("param", ["asd", 10.5, -1, ("asd"), [1, 10.5], ["kernel"]])
 def test_kernel(param):
-    KKMeans(algorithm=param)
+    KKMeans(kernel=param)

@@ -29,6 +29,7 @@ def ctrl_outer_sums(kernel_matrix, labels, n_clusters):
     outer_sums = np.zeros((kernel_matrix.shape[0], n_clusters))
     for i in range(n_clusters):
         mask = (labels == i)
+        print(mask)
         outer_sums[:, i] += kernel_matrix[:, mask].sum(axis=1)
     return outer_sums
 

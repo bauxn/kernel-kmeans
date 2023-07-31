@@ -1,6 +1,6 @@
 import numpy as np
-from elkan import start_elkan
-from utils import fill_empty_clusters
+from KKMeans.elkan import start_elkan
+from KKMeans.utils import fill_empty_clusters
 import pytest
 from tests.pytest_utils import (
     ctrl_centers_linear, RNG, build_starting_distance,

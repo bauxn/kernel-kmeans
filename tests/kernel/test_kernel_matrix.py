@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from kernels import build_kernel_matrix as km
+from KKMeans.kernels import build_kernel_matrix as km
 from sklearn.metrics.pairwise import pairwise_kernels as ctrl
 from tests.pytest_utils import RNG
 

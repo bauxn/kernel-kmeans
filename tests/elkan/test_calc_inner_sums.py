@@ -3,10 +3,10 @@ import pytest
 from tests.pytest_utils import (create_labels, RNG, split_integer,
     ctrl_inner_sums, ctrl_mixed_sums)
 from sklearn.metrics.pairwise import pairwise_kernels
-from elkan import _calc_inner_sums_mixed
+from KKMeans.elkan import _calc_inner_sums_mixed
 
 @pytest.mark.parametrize("lim_upper", (1,100))
-@pytest.mark.parametrize("n_clusters", (5,))
+@pytest.mark.parametrize("n_clusters", (1, 5,))
 @pytest.mark.parametrize("n_features", (2,10))
 @pytest.mark.parametrize("size", [20, 2000])
 @pytest.mark.parametrize("kernel", ["linear", "rbf"])

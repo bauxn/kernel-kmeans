@@ -4,9 +4,9 @@ from tests.pytest_utils import (create_labels, RNG, split_integer,
     ctrl_inner_sums, ctrl_mixed_sums, ctrl_centers_linear) # pep328
 from sklearn.metrics.pairwise import pairwise_kernels
 from scipy.spatial.distance import euclidean
-from elkan import _calc_center_dists
+from KKMeans.elkan import _calc_center_dists
 '''
-As this is "private" function, there will not be invalid parameter tests. ? TODO
+As this is "private" function, there will not be invalid parameter tests.
 '''
 
 @pytest.mark.parametrize("lim_upper", [1,100])

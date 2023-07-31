@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from kernels import (
+from KKMeans.kernels import (
     rbf_kernel, linear_kernel, 
     sigmoid_kernel, polynomial_kernel,
     laplacian_kernel

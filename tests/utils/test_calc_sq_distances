@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from sklearn.metrics.pairwise import pairwise_kernels, euclidean_distances
-from utils import calc_sq_distances
+from KKMeans.utils import calc_sq_distances
 from tests.pytest_utils import (
     RNG, ctrl_centers_linear, ctrl_inner_sums,
     create_labels, split_integer, ctrl_cluster_sizes
