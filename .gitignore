@@ -2,7 +2,6 @@ __pycache__/
 setup.cfg
 .vscode/
 *.pyd
-*.c
 build/
 dist/
 .ipynb_checkpoints/

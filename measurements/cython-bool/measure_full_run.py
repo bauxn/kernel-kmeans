@@ -1,11 +1,9 @@
 from sklearn.datasets import make_blobs
-from kernels import build_kernel_matrix
-from utils import fill_empty_clusters
+from KKMeans.kernels import build_kernel_matrix
+from KKMeans.utils import fill_empty_clusters
 import numpy as np
 from time import time
 from KKMeans import KKMeans
-from tqdm import tqdm
-
 
 
 class kkm_bool():

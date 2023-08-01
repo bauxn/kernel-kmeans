@@ -1,6 +1,6 @@
 import numpy as np
-from utils import _calc_inner_sums
-from kernels import build_kernel_matrix
+from KKMeans.utils import _calc_inner_sums
+from KKMeans.kernels import build_kernel_matrix
 from sklearn.datasets import make_blobs
 from time import time
 

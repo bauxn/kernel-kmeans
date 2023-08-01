@@ -9,7 +9,7 @@ def build_kernel_matrix(X, Y=None, kernel="linear", gamma=1, c_0=0, d=3, varianc
     Parameters
     ----------
     X: ndarray of shape(n_samples, n_features), dtype=np.double
-        data to build kernel matrix upon
+        data to build kernel matrix from
     Y: ndarray of shape(*, n_features), dtype=np.double, optional
         If None, Y=X. data to compute kernel matrix 
         against, eg kernel_matrix[i,j] = K(X[i], Y[j])

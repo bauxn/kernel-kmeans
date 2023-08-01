@@ -1,9 +1,10 @@
 import numpy as np
 import pytest
 from sklearn.metrics.pairwise import pairwise_kernels
+from sklearn.datasets import make_blobs
 from tests.pytest_utils import (
     RNG, build_starting_distance, create_labels,
-    split_integer
+    split_integer, ctrl_cluster_sizes
 )
 from KKMeans.elkan import start_elkan, _est_lower_bounds
 from KKMeans.utils import calc_sizes
@@ -43,3 +44,24 @@ def test_recalc(max_data, n_samples, n_clusters, n_features, kernel):
     sq_dists_t = _est_lower_bounds(km, sq_dists, c_dists, labels_1, cl_sizes, inner)
     
     assert np.allclose(sq_dists_c, sq_dists_t)
+
+
+@pytest.mark.parametrize("n_samples", [1, 2000])
+@pytest.mark.parametrize("n_clusters", [1, 20])
+@pytest.mark.parametrize("n_features", [1, 10])
+@pytest.mark.parametrize("kernel", ["linear", "rbf"])
+def test_skip(n_samples, n_features, n_clusters, kernel):
+    if n_samples < n_clusters:
+        pytest.xfail("create labels does not expect more cluster than samples")
+    data, labels = make_blobs(n_samples, n_features, centers=n_clusters)
+    km = pairwise_kernels(data, metric=kernel)
+    c_dists = np.asarray([[-np.inf] * n_clusters] * n_samples, dtype=np.double)
+    sizes = calc_sizes(labels, n_clusters)
+    start_dists = build_starting_distance(km, n_clusters)
+    exact_sq_dists, inner, sizes = start_elkan(start_dists, km, labels, n_clusters, sizes)
+    unlikely_val = 0.00058
+    l_bounds = np.asarray([[unlikely_val] * n_clusters] * n_samples, dtype=np.double)
+    l_bounds[range(n_samples), labels] = exact_sq_dists[range(n_samples), labels]
+    l_bounds_c = l_bounds.copy()
+    l_bounds_t = np.asarray(_est_lower_bounds(km, l_bounds, c_dists, labels, sizes, inner))
+    assert np.allclose(l_bounds_c, l_bounds_t)

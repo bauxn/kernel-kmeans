@@ -1,5 +1,5 @@
 from sklearn.datasets import make_blobs
-from kernels import build_kernel_matrix as bkm
+from KKMeans.kernels import build_kernel_matrix as bkm
 from sklearn.metrics.pairwise import pairwise_kernels as pk
 from time import time
 import numpy as np

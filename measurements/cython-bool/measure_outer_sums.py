@@ -1,7 +1,7 @@
 import numpy as np
-from utils import _calc_outer_sums
+from KKMeans.utils import _calc_outer_sums
 from sklearn.datasets import make_blobs
-from kernels import build_kernel_matrix
+from KKMeans.kernels import build_kernel_matrix
 from time import time
 
 def outer_sum_bools(km, labels, n_clusters):
