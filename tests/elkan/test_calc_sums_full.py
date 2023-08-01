@@ -6,9 +6,9 @@ from tests.pytest_utils import ctrl_inner_sums, ctrl_outer_sums
 from KKMeans.elkan import _calc_sums_full
 
 
-@pytest.mark.parametrize("n_samples", [1, 10,1000])
-@pytest.mark.parametrize("n_clusters", [2,100])
-@pytest.mark.parametrize("n_features", [1,10])
+@pytest.mark.parametrize("n_samples", [1, 10, 1000])
+@pytest.mark.parametrize("n_clusters", [2, 100])
+@pytest.mark.parametrize("n_features", [1, 10])
 @pytest.mark.parametrize("kernel", ["linear", "rbf"])
 def test_correct_generated(n_samples, n_clusters, n_features, kernel):
     if n_samples < n_clusters:

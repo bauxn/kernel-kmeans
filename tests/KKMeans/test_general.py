@@ -3,6 +3,7 @@ from sklearn.datasets import make_blobs
 import numpy as np
 import pytest
 
+
 def test_zero_ncluster_fail():
     try:
         KKMeans(0)
@@ -11,21 +12,22 @@ def test_zero_ncluster_fail():
     else:
         assert False
 
-@pytest.mark.parametrize("n_clusters", [1,10,100])
+
+@pytest.mark.parametrize("n_clusters", [1, 10, 100])
 def test_wrong_amount_centers(n_clusters):
     n_samples = 100
     n_features = 3
     bad_nclusters = 2
     _, __, centers = make_blobs(
-        n_samples, n_features, 
-        centers=bad_nclusters,
-        return_centers=True)
+        n_samples, n_features, centers=bad_nclusters, return_centers=True
+    )
     try:
         kkm = KKMeans(n_clusters, init=centers)
     except ValueError:
         pass
     else:
         assert False
+
 
 @pytest.mark.parametrize("n_clusters", [0, 10, 100])
 def test_given_centers_empty_fail(n_clusters):
@@ -46,6 +48,7 @@ def test_given_centers(n_samples, n_features, n_clusters):
     kkm = KKMeans(n_clusters)
     kkm.fit(data)
 
+
 @pytest.mark.parametrize("param", [[], (), None, ([]), "asd", -1, 0, [10]])
 def test_bad_n_clusters(param):
     try:
@@ -57,7 +60,10 @@ def test_bad_n_clusters(param):
     else:
         assert False
 
-@pytest.mark.parametrize("param", [None, "asd", -1, 0, 0.1, 10.5, [], (), None, ([]), ["kernel"]])
+
+@pytest.mark.parametrize(
+    "param", [None, "asd", -1, 0, 0.1, 10.5, [], (), None, ([]), ["kernel"]]
+)
 def test_bad_init(param):
     try:
         KKMeans(init=param)
@@ -67,6 +73,7 @@ def test_bad_init(param):
         pass
     else:
         assert False
+
 
 @pytest.mark.parametrize("n_clusters", [1, 10, 200])
 def test_string_init_fail(n_clusters):
@@ -80,6 +87,7 @@ def test_string_init_fail(n_clusters):
     else:
         assert False
 
+
 @pytest.mark.parametrize("param", [[], (), None, ([]), "asd", -1, 0, [10], ["kernel"]])
 def test_n_init(param):
     try:
@@ -92,7 +100,9 @@ def test_n_init(param):
         assert False
 
 
-@pytest.mark.parametrize("param", [[], (), None, ([]), "asd", -1, 0, [10], ["kernel"],0.1, 10.5])
+@pytest.mark.parametrize(
+    "param", [[], (), None, ([]), "asd", -1, 0, [10], ["kernel"], 0.1, 10.5]
+)
 def test_max_iter(param):
     try:
         KKMeans(max_iter=param)
@@ -103,7 +113,20 @@ def test_max_iter(param):
     else:
         assert False
 
-@pytest.mark.parametrize("param", [[], (), None, ([]), "asd", [10], ["kernel"], pytest.param(-1, marks = pytest.mark.xfail(reason="is set to 0"))])
+
+@pytest.mark.parametrize(
+    "param",
+    [
+        [],
+        (),
+        None,
+        ([]),
+        "asd",
+        [10],
+        ["kernel"],
+        pytest.param(-1, marks=pytest.mark.xfail(reason="is set to 0")),
+    ],
+)
 def test_tol(param):
     try:
         KKMeans(tol=param)
@@ -126,6 +149,7 @@ def test_q_metric(param):
     else:
         assert False
 
+
 @pytest.mark.parametrize("param", [None, [], [()], "asd", 10.5, -1, ("asd"), [1, 10.5]])
 def test_algorithm(param):
     try:
@@ -138,7 +162,9 @@ def test_algorithm(param):
         assert False
 
 
-@pytest.mark.parametrize("param", [None, [], [()], "asd", 10.5, -1, ("asd"), [1, 10.5], ["kernel"]])
+@pytest.mark.parametrize(
+    "param", [None, [], [()], "asd", 10.5, -1, ("asd"), [1, 10.5], ["kernel"]]
+)
 def test_kernel(param):
     try:
         KKMeans(kernel=param)
@@ -148,4 +174,3 @@ def test_kernel(param):
         pass
     else:
         assert False
-
