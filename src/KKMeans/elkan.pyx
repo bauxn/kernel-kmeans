@@ -45,10 +45,16 @@ def update_elkan(
 
 
     inner_sums_old = inner_sums
-    inner_sums_mixed, inner_sums = _calc_inner_sums_mixed(kernel_matrix, labels, labels_old, 
-                                                          n_clusters, return_inner_new=True)
-    center_dists += _calc_center_dists(inner_sums, inner_sums_mixed, inner_sums_old, sizes, sizes_old)
-    l_bounds = _est_lower_bounds(kernel_matrix, l_bounds, center_dists, labels, sizes, inner_sums)
+    inner_sums_mixed, inner_sums = _calc_inner_sums_mixed(
+        kernel_matrix, labels, labels_old, 
+        n_clusters, return_inner_new=True)
+    center_dists += _calc_center_dists(
+        inner_sums, inner_sums_mixed, 
+        inner_sums_old, sizes, sizes_old)
+    l_bounds = _est_lower_bounds(
+        kernel_matrix, l_bounds, 
+        center_dists, labels, 
+        siz es, inner_sums)
     return np.asarray(l_bounds), np.asarray(inner_sums), np.asarray(sizes), np.asarray(center_dists)
 
 
@@ -225,7 +231,10 @@ def start_elkan(
     return np.asarray(sq_distances), np.asarray(inner_sums), np.asarray(cluster_sizes)
 
 
-def _calc_sums_full(double[:, ::1] kernel_matrix, long[::1] labels, long n_clusters):
+def _calc_sums_full(
+        double[:, ::1] kernel_matrix, 
+        long[::1] labels, 
+        long n_clusters):
     '''
     Mathematical helper function
 
