@@ -1,5 +1,3 @@
-This is the github repository for my bachelor thesis.<br>
-<br>
 simple installation via "pip install KKMeans" <br>
 <br>
 To enable openMP, clone the project and open setup.py, you will find a list compile_args. The dcython argument prevents cython from transpling the assertions to c (-> do not remove).
