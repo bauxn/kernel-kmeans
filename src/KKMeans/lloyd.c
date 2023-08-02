@@ -4,9 +4,7 @@
 {
     "distutils": {
         "extra_compile_args": [
-            "/O2",
-            "-DCYTHON_WITHOUT_ASSERTIONS",
-            "/openmp"
+            "-DCYTHON_WITHOUT_ASSERTIONS"
         ],
         "name": "KKMeans.lloyd",
         "sources": [

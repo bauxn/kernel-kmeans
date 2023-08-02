@@ -54,7 +54,7 @@ def update_elkan(
     l_bounds = _est_lower_bounds(
         kernel_matrix, l_bounds, 
         center_dists, labels, 
-        siz es, inner_sums)
+        sizes, inner_sums)
     return np.asarray(l_bounds), np.asarray(inner_sums), np.asarray(sizes), np.asarray(center_dists)
 
 

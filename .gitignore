@@ -13,6 +13,7 @@ test.pyx
 h_demo.ipynb
 h_*.py
 h_*.ipynb
+demo.ipynb
 utils_test.py
 *-info
 .VSCodeCounter
