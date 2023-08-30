@@ -9,9 +9,8 @@ class KKMeans():
     '''
     Kernel K-Means Clustering.
 
-    Read more in the thesis. TODO
+    For theory consult the thesis (provided on github)
     Designed to mimic sklearn.cluster.KMeans
-    limitations: kernel matrix
 
     Parameters 
     ----------
@@ -81,7 +80,7 @@ class KKMeans():
         The original elkan (wiht pw cluster distances) is slower
         than lloyd's when utilizing a kernel matrix.
 
-    kernel: {"linear", "rbf", "polynomial", "sigmoid", "gaussian", "laplacian"}, default="linear"
+    kernel: {"linear", "rbf", "polynomial", "sigmoid", "gaussian"}, default="linear"
         Which kernel shall be used to compute the kernel matrix.
         Gaussian is equal to rbf with gamma = variance**-2
         Linear calculates a regular kmeans clustering.

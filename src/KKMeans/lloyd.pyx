@@ -35,7 +35,6 @@ def update_lloyd(
     Numpy ndarray can be passed for memoryview.
     sq_distances parameter deliberately not typed because
     of np broadcast addition in loop.
-    TODO measure speed if typed explicitely.
     '''         
     cdef Py_ssize_t cluster # loop index
 
