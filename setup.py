@@ -8,8 +8,6 @@ compile_args = ["-DCYTHON_WITHOUT_ASSERTIONS"]
 # # msvc
 # compile_args = ["/O2", "-DCYTHON_WITHOUT_ASSERTIONS", "/openmp"]
 
-# # gcc
-# compile_args = ["-O3", "-ffast-math", "-DCYTHON_WITHOUT_ASSERTIONS", "-fopenmp"]
 
 compiler_directives = {
     "language_level": 3, 

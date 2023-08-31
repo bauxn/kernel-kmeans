@@ -18,7 +18,7 @@ Then open the project folder and run
 > pip install .
 
 Enabling OpenMP: There is a clearly marked line in setup.py that contains the compiler arguments. Before installing, these need 
-to be edited so that they contain whichever command your compiler uses to enable OpenMP. There are outcommented lines which contain the correct arguments (and some additional ones for efficiency) for the **msvc** and the **gcc** compiler.
+to be edited so that they contain whichever command your compiler uses to enable OpenMP. There already is a outcommented line which contains the correct arguments (and some additional ones for efficiency) for the msvc compiler.
 
 ## Basic Usage
 
