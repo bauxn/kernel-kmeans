@@ -70,14 +70,14 @@ for i in range(runs):
     kkmb.lloyd_bool()
     end = time()
     kkmb_store.append(end - start)
-    # print("midway through")
-    # start = time()
-    # kkm.lloyd(km, labels)
-    # end = time()
-    # kkm_store.append(end - start)
+    print("midway through")
+    start = time()
+    kkm.lloyd(km, labels)
+    end = time()
+    kkm_store.append(end - start)
     
 
-# print("avg_cython:", sum(kkm_store) / len(kkm_store))
+print("avg_cython:", sum(kkm_store) / len(kkm_store))
 print("avg_bool:", sum(kkmb_store) / len(kkmb_store))
 
 with open("full_run.txt", "a") as file:
@@ -89,5 +89,5 @@ with open("full_run.txt", "a") as file:
     file.write("n_features: " + str(n_features) + "\n")
     file.write("n_clusters: " + str(n_clusters) + "\n")
     file.write("\n")
-    # file.write("avg_cython:" + str(sum(kkm_store) / len(kkm_store)) + "\n")
+    file.write("avg_cython:" + str(sum(kkm_store) / len(kkm_store)) + "\n")
     file.write("avg_bool:"+ str(sum(kkmb_store) / len(kkmb_store)) + "\n" + "\n")
