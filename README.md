@@ -34,6 +34,9 @@ KKMeans also contains the modules _kernels_ (provides functionality to build ker
 For more elaborate usage consult the thesis on github or the docstrings.
 
 ## Limitations
+
+The biggest limiting factor is the storage of the kernel matrix. A Dataset of 15.000 datapoints already results in a kernel matrix that takes up 1.8 Gigabyte of RAM.
+
 As the computations happen C, in extreme cases overflows and other datatype errors may occur. Critical points are:
 
 | values | datatype |
